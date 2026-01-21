@@ -1,0 +1,396 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		193FE8B54640A632955AB98D /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9089A5C50FD5ED9B8626918B /* LoadingView.swift */; };
+		299F4B655C6C33864F5C5A91 /* ReferencePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1284908E5E8FA8C7A386A1 /* ReferencePanel.swift */; };
+		3DEFEC71AB4CB78C987FB01C /* MinimalButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 409D6B9F22C288EEF3875232 /* MinimalButtonStyle.swift */; };
+		429406BBFD0019B2E006DE86 /* SummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC8D54F02330DFF50781348 /* SummaryView.swift */; };
+		530B0D9C5A1C51CAC30ACC32 /* ClaudeCLIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8913174ACDE91794B2CD94EC /* ClaudeCLIService.swift */; };
+		5EBE487F021BD210B8A7B5AF /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C1995BD988E65E1876EEFBA /* Exercise.swift */; };
+		60AAE00AFB4ED8801153E4CD /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E3F473E30AAEA61C0CB298 /* ContentView.swift */; };
+		B9062224471804AC81FFDF91 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 71EB5A5FAEDEE10978A40C48 /* Assets.xcassets */; };
+		D700507789FE88E24D208E68 /* ExerciseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F98403B0FB89F4B54833DF6D /* ExerciseView.swift */; };
+		E37D365E871F827F35E03892 /* DropZoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DE1A774BA7FB067C116551C /* DropZoneView.swift */; };
+		ED8CEF5AAA54C64193BCCE67 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2AF93345C7E5E36DAEB27C7 /* AppState.swift */; };
+		F5C285233DC18CE3668346AA /* PENSVMApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 596C61B1D53FBDA4BDA20E4E /* PENSVMApp.swift */; };
+		FE892185974784448C03D9B9 /* ExerciseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96E7A181F00645EB5C3ECDBC /* ExerciseViewModel.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0DE1A774BA7FB067C116551C /* DropZoneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropZoneView.swift; sourceTree = "<group>"; };
+		3C1995BD988E65E1876EEFBA /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
+		409D6B9F22C288EEF3875232 /* MinimalButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinimalButtonStyle.swift; sourceTree = "<group>"; };
+		4C1284908E5E8FA8C7A386A1 /* ReferencePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferencePanel.swift; sourceTree = "<group>"; };
+		596C61B1D53FBDA4BDA20E4E /* PENSVMApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PENSVMApp.swift; sourceTree = "<group>"; };
+		71EB5A5FAEDEE10978A40C48 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		8913174ACDE91794B2CD94EC /* ClaudeCLIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeCLIService.swift; sourceTree = "<group>"; };
+		8D52AF198AED9335152714CE /* PENSVM.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PENSVM.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9089A5C50FD5ED9B8626918B /* LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
+		96E7A181F00645EB5C3ECDBC /* ExerciseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseViewModel.swift; sourceTree = "<group>"; };
+		A1E3F473E30AAEA61C0CB298 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A2AF93345C7E5E36DAEB27C7 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		D1F675D71FFD3F0C659DD548 /* PENSVM.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PENSVM.entitlements; sourceTree = "<group>"; };
+		EBC8D54F02330DFF50781348 /* SummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SummaryView.swift; sourceTree = "<group>"; };
+		F98403B0FB89F4B54833DF6D /* ExerciseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		2F97517D873EE5607F2E241D = {
+			isa = PBXGroup;
+			children = (
+				EF2C79378CD8A2F5D68FA481 /* PENSVM */,
+				32D5D733AA63732A4A99CFB8 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		32D5D733AA63732A4A99CFB8 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8D52AF198AED9335152714CE /* PENSVM.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B597355D893CEA8E61D902EC /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A2AF93345C7E5E36DAEB27C7 /* AppState.swift */,
+				3C1995BD988E65E1876EEFBA /* Exercise.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		C9645D9FE4878FDA501428BA /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				96E7A181F00645EB5C3ECDBC /* ExerciseViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		E72BE337B8D953B351BD0131 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				0DE1A774BA7FB067C116551C /* DropZoneView.swift */,
+				F98403B0FB89F4B54833DF6D /* ExerciseView.swift */,
+				9089A5C50FD5ED9B8626918B /* LoadingView.swift */,
+				409D6B9F22C288EEF3875232 /* MinimalButtonStyle.swift */,
+				4C1284908E5E8FA8C7A386A1 /* ReferencePanel.swift */,
+				EBC8D54F02330DFF50781348 /* SummaryView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		EF2C79378CD8A2F5D68FA481 /* PENSVM */ = {
+			isa = PBXGroup;
+			children = (
+				71EB5A5FAEDEE10978A40C48 /* Assets.xcassets */,
+				A1E3F473E30AAEA61C0CB298 /* ContentView.swift */,
+				D1F675D71FFD3F0C659DD548 /* PENSVM.entitlements */,
+				596C61B1D53FBDA4BDA20E4E /* PENSVMApp.swift */,
+				B597355D893CEA8E61D902EC /* Models */,
+				FAA2DE24B3F4AC6FEC946C9B /* Services */,
+				C9645D9FE4878FDA501428BA /* ViewModels */,
+				E72BE337B8D953B351BD0131 /* Views */,
+			);
+			path = PENSVM;
+			sourceTree = "<group>";
+		};
+		FAA2DE24B3F4AC6FEC946C9B /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				8913174ACDE91794B2CD94EC /* ClaudeCLIService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		FF6861090B35D16096F5A722 /* PENSVM */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C590DF72C4D58FE957965927 /* Build configuration list for PBXNativeTarget "PENSVM" */;
+			buildPhases = (
+				84F7D3129A92C45F08DD1A9D /* Sources */,
+				F8FD6A540027C8C60985DD29 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PENSVM;
+			packageProductDependencies = (
+			);
+			productName = PENSVM;
+			productReference = 8D52AF198AED9335152714CE /* PENSVM.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		2D7093DD6C6753B764ABFC2E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					FF6861090B35D16096F5A722 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = A13A75355A99141725B17871 /* Build configuration list for PBXProject "PENSVM" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 2F97517D873EE5607F2E241D;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FF6861090B35D16096F5A722 /* PENSVM */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F8FD6A540027C8C60985DD29 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B9062224471804AC81FFDF91 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		84F7D3129A92C45F08DD1A9D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ED8CEF5AAA54C64193BCCE67 /* AppState.swift in Sources */,
+				530B0D9C5A1C51CAC30ACC32 /* ClaudeCLIService.swift in Sources */,
+				60AAE00AFB4ED8801153E4CD /* ContentView.swift in Sources */,
+				E37D365E871F827F35E03892 /* DropZoneView.swift in Sources */,
+				5EBE487F021BD210B8A7B5AF /* Exercise.swift in Sources */,
+				D700507789FE88E24D208E68 /* ExerciseView.swift in Sources */,
+				FE892185974784448C03D9B9 /* ExerciseViewModel.swift in Sources */,
+				193FE8B54640A632955AB98D /* LoadingView.swift in Sources */,
+				3DEFEC71AB4CB78C987FB01C /* MinimalButtonStyle.swift in Sources */,
+				F5C285233DC18CE3668346AA /* PENSVMApp.swift in Sources */,
+				299F4B655C6C33864F5C5A91 /* ReferencePanel.swift in Sources */,
+				429406BBFD0019B2E006DE86 /* SummaryView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		252A47D575A19EA36A9D9AF6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = PENSVM/PENSVM.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pensvm.app;
+				PRODUCT_NAME = PENSVM;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		43182C8ED9CA250445312AA7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = PENSVM/PENSVM.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pensvm.app;
+				PRODUCT_NAME = PENSVM;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		85DF88CB92DD14D0FB3A40E2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		B426F599231033189BF5A881 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A13A75355A99141725B17871 /* Build configuration list for PBXProject "PENSVM" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B426F599231033189BF5A881 /* Debug */,
+				85DF88CB92DD14D0FB3A40E2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C590DF72C4D58FE957965927 /* Build configuration list for PBXNativeTarget "PENSVM" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				252A47D575A19EA36A9D9AF6 /* Debug */,
+				43182C8ED9CA250445312AA7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 2D7093DD6C6753B764ABFC2E /* Project object */;
+}

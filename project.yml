@@ -1,0 +1,37 @@
+name: PENSVM
+options:
+  bundleIdPrefix: com.pensvm
+  deploymentTarget:
+    macOS: "14.0"
+  minimumXcodeGenVersion: "2.0"
+
+targets:
+  PENSVM:
+    type: application
+    platform: macOS
+    sources:
+      - PENSVM
+    settings:
+      debug:
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+      release:
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: ""
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pensvm.app
+        PRODUCT_NAME: PENSVM
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.education"
+        INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © 2025"
+        SWIFT_VERSION: "5.9"
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_HARDENED_RUNTIME: NO
+        CODE_SIGN_IDENTITY: "-"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    entitlements:
+      path: PENSVM/PENSVM.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.network.client: true
