@@ -27,3 +27,6 @@ Package.resolved
 
 # Claude
 .claude/
+
+# Manual testing
+Samples/
