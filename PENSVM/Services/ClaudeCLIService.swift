@@ -25,16 +25,27 @@ enum ClaudeCLIError: LocalizedError {
 }
 
 class ClaudeCLIService {
-    private let nvmDir = NSHomeDirectory() + "/.nvm/versions/node"
-    private let bunBinPath = NSHomeDirectory() + "/.bun/bin"
+    private let fileManager = FileManager.default
 
-    private var nodeBinPath: String {
-        // Find the latest node version in nvm
-        let fileManager = FileManager.default
+    /// Resolves Claude CLI path in order of preference:
+    /// 1. ~/.local/bin/claude (native binary - recommended)
+    /// 2. nvm node bin path (legacy npm install)
+    /// 3. /usr/local/bin/claude (fallback)
+    private var claudePath: String {
+        let candidates = [
+            NSHomeDirectory() + "/.local/bin/claude",           // Native binary
+            nvmClaudePath,                                       // Legacy npm via nvm
+            "/usr/local/bin/claude"                              // System fallback
+        ]
+
+        return candidates.first { fileManager.fileExists(atPath: $0) } ?? candidates[0]
+    }
+
+    private var nvmClaudePath: String {
+        let nvmDir = NSHomeDirectory() + "/.nvm/versions/node"
         guard let versions = try? fileManager.contentsOfDirectory(atPath: nvmDir) else {
-            return "/usr/local/bin"
+            return ""
         }
-        // Sort versions and get the latest (e.g., v20.19.4 > v18.17.0)
         let latest = versions
             .filter { $0.hasPrefix("v") }
             .sorted { v1, v2 in
@@ -48,13 +59,9 @@ class ClaudeCLIService {
             .first
 
         if let latest = latest {
-            return "\(nvmDir)/\(latest)/bin"
+            return "\(nvmDir)/\(latest)/bin/claude"
         }
-        return "/usr/local/bin"
-    }
-
-    private var claudePath: String {
-        return "\(nodeBinPath)/claude"
+        return ""
     }
 
     // Automatically use mock data in Debug builds, real AI in Release
@@ -196,10 +203,10 @@ class ClaudeCLIService {
             "--no-session-persistence"
         ]
 
-        // Set up environment with node in PATH (required for macOS apps)
+        // Ensure ~/.local/bin is in PATH for native binary
         var env = ProcessInfo.processInfo.environment
         let currentPath = env["PATH"] ?? "/usr/bin:/bin"
-        env["PATH"] = "\(nodeBinPath):\(bunBinPath):\(currentPath)"
+        env["PATH"] = "\(NSHomeDirectory())/.local/bin:\(currentPath)"
         process.environment = env
 
         let outputPipe = Pipe()

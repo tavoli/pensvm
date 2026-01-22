@@ -4,6 +4,7 @@ struct ReferencePanel: View {
     @EnvironmentObject var viewModel: ExerciseViewModel
 
     private let references = [
+        ("Nominative", "Who? (subject)", "-a, -us, -um", "-ae, -ī, -a"),
         ("Accusative", "Who/What? (object)", "-am, -um", "-ās, -ōs, -a"),
         ("Ablative", "Where? / With whom?", "-ā, -ō", "-īs"),
         ("Imperative", "Command", "-ā, -ē, -e, -ī", "-āte, -ēte, -ite, -īte"),

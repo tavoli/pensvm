@@ -4,15 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-PENSVM is a native macOS app for practicing Latin exercises from "Lingua Latina per se Illustrata" (LLPSI). Users drag & drop images of PENSVM A exercises, the app uses OpenAI Vision API to extract and structure the content, then presents an interactive fill-in-the-gap interface.
+PENSVM is a native macOS app for practicing Latin exercises from "Lingua Latina per se Illustrata" (LLPSI). Users drag & drop images of PENSVM A exercises, the app uses Claude CLI to extract and structure the content, then presents an interactive fill-in-the-gap interface.
 
 ## Tech Stack
 
 - **Platform:** macOS 13+ (Ventura)
 - **Framework:** SwiftUI
 - **Language:** Swift 5.9+
-- **AI:** OpenAI Vision API (GPT-4o)
-- **API Key:** Read from environment variable `OPENAI_API_KEY`
+- **AI:** Claude CLI (invoked as subprocess)
 
 ## Architecture
 
@@ -31,10 +30,10 @@ Models
 ├── Exercise          → Collection of sentences
 ├── Sentence          → Parts array (text + gaps)
 ├── SentencePart      → Enum: .text(String) or .gap(Gap)
-└── Gap               → stem, correctEnding, userAnswer
+└── Gap               → stem, correctEnding, dictionaryForm, wordType, userAnswer
 
 Services
-└── OpenAIVisionService → Handles image → JSON parsing via API
+└── ClaudeCLIService  → Invokes Claude CLI for image → JSON parsing
 ```
 
 ## Data Model
@@ -58,18 +57,28 @@ Gap validation is case-insensitive and accepts answers with or without macrons (
 - Esc: Close modals
 - Cmd+O: Open new image
 
-## OpenAI Integration
+## Claude CLI Integration
 
-Endpoint: `POST https://api.openai.com/v1/chat/completions`
+The app invokes Claude CLI as a subprocess with these flags:
+- `-p <prompt>` — Prompt with image path
+- `--output-format json` — Structured JSON output
+- `--json-schema <schema>` — Enforces response structure
+- `--allowedTools Read` — Permits Claude to read the image file
+- `--no-session-persistence` — Stateless invocation
 
-Expected response format:
+Claude CLI path resolution (in order):
+1. `~/.local/bin/claude` (native binary - recommended)
+2. `~/.nvm/versions/node/<latest>/bin/claude` (legacy npm install)
+3. `/usr/local/bin/claude` (system fallback)
+
+Expected response format (via `structured_output`):
 ```json
 {
   "sentences": [
     {
       "parts": [
         {"type": "text", "content": "Roma in "},
-        {"type": "gap", "stem": "Itali", "correctEnding": "ā"},
+        {"type": "gap", "stem": "Itali", "correctEnding": "ā", "dictionaryForm": "Italia", "wordType": "noun (1st decl)"},
         {"type": "text", "content": " est."}
       ]
     }
@@ -84,3 +93,4 @@ Expected response format:
 - Answer comparison: case-insensitive, macron-tolerant
 - Correct answers: green background
 - Incorrect answers: white background with correct answer shown in parentheses below
+- Debug mode: Uses mock data in DEBUG builds for fast iteration
