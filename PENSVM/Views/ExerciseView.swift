@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ExerciseView: View {
-    @EnvironmentObject var viewModel: ExerciseViewModel
+    @EnvironmentObject var viewModel: AppViewModel
     @FocusState private var focusedGapIndex: Int?
     @FocusState private var isViewFocused: Bool
 
@@ -66,7 +66,7 @@ struct SentenceView: View {
     let isChecked: Bool
     var focusedGapIndex: FocusState<Int?>.Binding
 
-    @EnvironmentObject var viewModel: ExerciseViewModel
+    @EnvironmentObject var viewModel: AppViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -115,7 +115,7 @@ struct GapView: View {
     let isChecked: Bool
     var focusedGapIndex: FocusState<Int?>.Binding
 
-    @EnvironmentObject var viewModel: ExerciseViewModel
+    @EnvironmentObject var viewModel: AppViewModel
     @State private var text: String = ""
     @State private var showingDictionary: Bool = false
 

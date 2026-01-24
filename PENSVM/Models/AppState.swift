@@ -1,15 +1,23 @@
 import Foundation
 
 enum AppState: Equatable {
-    case dropZone
-    case loading
-    case exercise
-    case summary
-    case error(String)
+    case home              // Landing screen
+    case chapterLibrary    // List of all chapters
+    case chapterDetail     // Single chapter with Read/Exercises options
+    case reading           // Display chapter pages
+    case exerciseLibrary   // List exercises (filtered by chapter when selected)
+    case loading           // Processing state
+    case exercise          // Main practice interface
+    case summary           // Results screen
+    case error(String)     // Error state
 
     static func == (lhs: AppState, rhs: AppState) -> Bool {
         switch (lhs, rhs) {
-        case (.dropZone, .dropZone),
+        case (.home, .home),
+             (.chapterLibrary, .chapterLibrary),
+             (.chapterDetail, .chapterDetail),
+             (.reading, .reading),
+             (.exerciseLibrary, .exerciseLibrary),
              (.loading, .loading),
              (.exercise, .exercise),
              (.summary, .summary):

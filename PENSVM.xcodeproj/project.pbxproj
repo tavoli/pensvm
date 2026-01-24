@@ -16,14 +16,29 @@
 		60AAE00AFB4ED8801153E4CD /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E3F473E30AAEA61C0CB298 /* ContentView.swift */; };
 		B9062224471804AC81FFDF91 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 71EB5A5FAEDEE10978A40C48 /* Assets.xcassets */; };
 		D700507789FE88E24D208E68 /* ExerciseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F98403B0FB89F4B54833DF6D /* ExerciseView.swift */; };
-		E37D365E871F827F35E03892 /* DropZoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DE1A774BA7FB067C116551C /* DropZoneView.swift */; };
 		ED8CEF5AAA54C64193BCCE67 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2AF93345C7E5E36DAEB27C7 /* AppState.swift */; };
 		F5C285233DC18CE3668346AA /* PENSVMApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 596C61B1D53FBDA4BDA20E4E /* PENSVMApp.swift */; };
-		FE892185974784448C03D9B9 /* ExerciseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96E7A181F00645EB5C3ECDBC /* ExerciseViewModel.swift */; };
+		FE892185974784448C03D9B9 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96E7A181F00645EB5C3ECDBC /* AppViewModel.swift */; };
+		AA000001AAAA0001AAAA0001 /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000001BBBB0001BBBB0001 /* ExerciseLibraryView.swift */; };
+		AA000002AAAA0002AAAA0002 /* StoredExercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002BBBB0002BBBB0002 /* StoredExercise.swift */; };
+		AA000003AAAA0003AAAA0003 /* ExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000003BBBB0003BBBB0003 /* ExerciseLibrary.swift */; };
+		AA000004AAAA0004AAAA0004 /* ExerciseStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000004BBBB0004BBBB0004 /* ExerciseStorageService.swift */; };
+		AA000005AAAA0005AAAA0005 /* ChapterStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000005BBBB0005BBBB0005 /* ChapterStorageService.swift */; };
+		AA000006AAAA0006AAAA0006 /* ReadingContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000006BBBB0006BBBB0006 /* ReadingContent.swift */; };
+		AA000007AAAA0007AAAA0007 /* AssetStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000007BBBB0007BBBB0007 /* AssetStorageService.swift */; };
+		DD000001DDDD0001DDDD0001 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000001EEEE0001EEEE0001 /* HomeView.swift */; };
+		DD000002DDDD0002DDDD0002 /* ChapterLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000002EEEE0002EEEE0002 /* ChapterLibraryView.swift */; };
+		DD000003DDDD0003DDDD0003 /* ChapterDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000003EEEE0003EEEE0003 /* ChapterDetailView.swift */; };
+		DD000004DDDD0004DDDD0004 /* ReadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000004EEEE0004EEEE0004 /* ReadingView.swift */; };
+		DD000005DDDD0005DDDD0005 /* PageContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000005EEEE0005EEEE0005 /* PageContentView.swift */; };
+		DD000006DDDD0006DDDD0006 /* MarginStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000006EEEE0006EEEE0006 /* MarginStripView.swift */; };
+		DD000007DDDD0007DDDD0007 /* ToonParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000007EEEE0007EEEE0007 /* ToonParser.swift */; };
+		DD000008DDDD0008DDDD0008 /* FocusedPhraseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000008EEEE0008EEEE0008 /* FocusedPhraseView.swift */; };
+		DD000009DDDD0009DDDD0009 /* SessionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000009EEEE0009EEEE0009 /* SessionState.swift */; };
+		DD00000ADDDD000ADDDD000A /* SessionStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000AEEEE000AEEEE000A /* SessionStorageService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0DE1A774BA7FB067C116551C /* DropZoneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropZoneView.swift; sourceTree = "<group>"; };
 		3C1995BD988E65E1876EEFBA /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
 		409D6B9F22C288EEF3875232 /* MinimalButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinimalButtonStyle.swift; sourceTree = "<group>"; };
 		4C1284908E5E8FA8C7A386A1 /* ReferencePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferencePanel.swift; sourceTree = "<group>"; };
@@ -32,12 +47,29 @@
 		8913174ACDE91794B2CD94EC /* ClaudeCLIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeCLIService.swift; sourceTree = "<group>"; };
 		8D52AF198AED9335152714CE /* PENSVM.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PENSVM.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9089A5C50FD5ED9B8626918B /* LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
-		96E7A181F00645EB5C3ECDBC /* ExerciseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseViewModel.swift; sourceTree = "<group>"; };
+		96E7A181F00645EB5C3ECDBC /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
 		A1E3F473E30AAEA61C0CB298 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A2AF93345C7E5E36DAEB27C7 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		D1F675D71FFD3F0C659DD548 /* PENSVM.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PENSVM.entitlements; sourceTree = "<group>"; };
 		EBC8D54F02330DFF50781348 /* SummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SummaryView.swift; sourceTree = "<group>"; };
 		F98403B0FB89F4B54833DF6D /* ExerciseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseView.swift; sourceTree = "<group>"; };
+		BB000001BBBB0001BBBB0001 /* ExerciseLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryView.swift; sourceTree = "<group>"; };
+		BB000002BBBB0002BBBB0002 /* StoredExercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredExercise.swift; sourceTree = "<group>"; };
+		BB000003BBBB0003BBBB0003 /* ExerciseLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibrary.swift; sourceTree = "<group>"; };
+		BB000004BBBB0004BBBB0004 /* ExerciseStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseStorageService.swift; sourceTree = "<group>"; };
+		BB000005BBBB0005BBBB0005 /* ChapterStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterStorageService.swift; sourceTree = "<group>"; };
+		BB000006BBBB0006BBBB0006 /* ReadingContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingContent.swift; sourceTree = "<group>"; };
+		BB000007BBBB0007BBBB0007 /* AssetStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetStorageService.swift; sourceTree = "<group>"; };
+		EE000001EEEE0001EEEE0001 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		EE000002EEEE0002EEEE0002 /* ChapterLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterLibraryView.swift; sourceTree = "<group>"; };
+		EE000003EEEE0003EEEE0003 /* ChapterDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterDetailView.swift; sourceTree = "<group>"; };
+		EE000004EEEE0004EEEE0004 /* ReadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingView.swift; sourceTree = "<group>"; };
+		EE000005EEEE0005EEEE0005 /* PageContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageContentView.swift; sourceTree = "<group>"; };
+		EE000006EEEE0006EEEE0006 /* MarginStripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarginStripView.swift; sourceTree = "<group>"; };
+		EE000007EEEE0007EEEE0007 /* ToonParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToonParser.swift; sourceTree = "<group>"; };
+		EE000008EEEE0008EEEE0008 /* FocusedPhraseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusedPhraseView.swift; sourceTree = "<group>"; };
+		EE000009EEEE0009EEEE0009 /* SessionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionState.swift; sourceTree = "<group>"; };
+		EE00000AEEEE000AEEEE000A /* SessionStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStorageService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -62,14 +94,34 @@
 			children = (
 				A2AF93345C7E5E36DAEB27C7 /* AppState.swift */,
 				3C1995BD988E65E1876EEFBA /* Exercise.swift */,
+				EE000009EEEE0009EEEE0009 /* SessionState.swift */,
+				CC000001CCCC0001CCCC0001 /* Exercise */,
+				CC000002CCCC0002CCCC0002 /* Reading */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		CC000001CCCC0001CCCC0001 /* Exercise */ = {
+			isa = PBXGroup;
+			children = (
+				BB000002BBBB0002BBBB0002 /* StoredExercise.swift */,
+				BB000003BBBB0003BBBB0003 /* ExerciseLibrary.swift */,
+			);
+			path = Exercise;
+			sourceTree = "<group>";
+		};
+		CC000002CCCC0002CCCC0002 /* Reading */ = {
+			isa = PBXGroup;
+			children = (
+				BB000006BBBB0006BBBB0006 /* ReadingContent.swift */,
+			);
+			path = Reading;
 			sourceTree = "<group>";
 		};
 		C9645D9FE4878FDA501428BA /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
-				96E7A181F00645EB5C3ECDBC /* ExerciseViewModel.swift */,
+				96E7A181F00645EB5C3ECDBC /* AppViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -77,14 +129,29 @@
 		E72BE337B8D953B351BD0131 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				0DE1A774BA7FB067C116551C /* DropZoneView.swift */,
+				EE000002EEEE0002EEEE0002 /* ChapterLibraryView.swift */,
+				EE000003EEEE0003EEEE0003 /* ChapterDetailView.swift */,
+				BB000001BBBB0001BBBB0001 /* ExerciseLibraryView.swift */,
 				F98403B0FB89F4B54833DF6D /* ExerciseView.swift */,
+				EE000001EEEE0001EEEE0001 /* HomeView.swift */,
 				9089A5C50FD5ED9B8626918B /* LoadingView.swift */,
 				409D6B9F22C288EEF3875232 /* MinimalButtonStyle.swift */,
+				FF000001FFFF0001FFFF0001 /* Reading */,
 				4C1284908E5E8FA8C7A386A1 /* ReferencePanel.swift */,
 				EBC8D54F02330DFF50781348 /* SummaryView.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		FF000001FFFF0001FFFF0001 /* Reading */ = {
+			isa = PBXGroup;
+			children = (
+				EE000008EEEE0008EEEE0008 /* FocusedPhraseView.swift */,
+				EE000006EEEE0006EEEE0006 /* MarginStripView.swift */,
+				EE000005EEEE0005EEEE0005 /* PageContentView.swift */,
+				EE000004EEEE0004EEEE0004 /* ReadingView.swift */,
+			);
+			path = Reading;
 			sourceTree = "<group>";
 		};
 		EF2C79378CD8A2F5D68FA481 /* PENSVM */ = {
@@ -106,6 +173,11 @@
 			isa = PBXGroup;
 			children = (
 				8913174ACDE91794B2CD94EC /* ClaudeCLIService.swift */,
+				BB000004BBBB0004BBBB0004 /* ExerciseStorageService.swift */,
+				BB000005BBBB0005BBBB0005 /* ChapterStorageService.swift */,
+				BB000007BBBB0007BBBB0007 /* AssetStorageService.swift */,
+				EE00000AEEEE000AEEEE000A /* SessionStorageService.swift */,
+				EE000007EEEE0007EEEE0007 /* ToonParser.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -183,15 +255,31 @@
 				ED8CEF5AAA54C64193BCCE67 /* AppState.swift in Sources */,
 				530B0D9C5A1C51CAC30ACC32 /* ClaudeCLIService.swift in Sources */,
 				60AAE00AFB4ED8801153E4CD /* ContentView.swift in Sources */,
-				E37D365E871F827F35E03892 /* DropZoneView.swift in Sources */,
 				5EBE487F021BD210B8A7B5AF /* Exercise.swift in Sources */,
 				D700507789FE88E24D208E68 /* ExerciseView.swift in Sources */,
-				FE892185974784448C03D9B9 /* ExerciseViewModel.swift in Sources */,
+				FE892185974784448C03D9B9 /* AppViewModel.swift in Sources */,
 				193FE8B54640A632955AB98D /* LoadingView.swift in Sources */,
 				3DEFEC71AB4CB78C987FB01C /* MinimalButtonStyle.swift in Sources */,
 				F5C285233DC18CE3668346AA /* PENSVMApp.swift in Sources */,
 				299F4B655C6C33864F5C5A91 /* ReferencePanel.swift in Sources */,
 				429406BBFD0019B2E006DE86 /* SummaryView.swift in Sources */,
+				AA000001AAAA0001AAAA0001 /* ExerciseLibraryView.swift in Sources */,
+				AA000002AAAA0002AAAA0002 /* StoredExercise.swift in Sources */,
+				AA000003AAAA0003AAAA0003 /* ExerciseLibrary.swift in Sources */,
+				AA000004AAAA0004AAAA0004 /* ExerciseStorageService.swift in Sources */,
+				AA000005AAAA0005AAAA0005 /* ChapterStorageService.swift in Sources */,
+				AA000006AAAA0006AAAA0006 /* ReadingContent.swift in Sources */,
+				AA000007AAAA0007AAAA0007 /* AssetStorageService.swift in Sources */,
+				DD000001DDDD0001DDDD0001 /* HomeView.swift in Sources */,
+				DD000002DDDD0002DDDD0002 /* ChapterLibraryView.swift in Sources */,
+				DD000003DDDD0003DDDD0003 /* ChapterDetailView.swift in Sources */,
+				DD000004DDDD0004DDDD0004 /* ReadingView.swift in Sources */,
+				DD000005DDDD0005DDDD0005 /* PageContentView.swift in Sources */,
+				DD000006DDDD0006DDDD0006 /* MarginStripView.swift in Sources */,
+				DD000007DDDD0007DDDD0007 /* ToonParser.swift in Sources */,
+				DD000008DDDD0008DDDD0008 /* FocusedPhraseView.swift in Sources */,
+				DD000009DDDD0009DDDD0009 /* SessionState.swift in Sources */,
+				DD00000ADDDD000ADDDD000A /* SessionStorageService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

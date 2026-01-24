@@ -1,25 +1,42 @@
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject var viewModel: ExerciseViewModel
+    @EnvironmentObject var viewModel: AppViewModel
     @State private var isFullScreen = false
 
     var body: some View {
         VStack(spacing: 0) {
             // Title bar area
             HStack {
+                if viewModel.state != .home {
+                    Button(action: handleBack) {
+                        Text("< Back")
+                            .font(.custom("Palatino", size: 14))
+                            .foregroundColor(.black)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+
+                Spacer()
+
                 Text("PENSVM")
                     .font(.custom("Palatino", size: 16))
                     .foregroundColor(.black)
+
                 Spacer()
+
                 if case .exercise = viewModel.state {
                     Text("\(viewModel.currentSentenceIndex + 1) / \(viewModel.totalSentences)")
+                        .font(.custom("Palatino", size: 16))
+                        .foregroundColor(.black)
+                } else if case .reading = viewModel.state {
+                    Text("\(viewModel.currentPageIndex + 1) / \(viewModel.totalPages)")
                         .font(.custom("Palatino", size: 16))
                         .foregroundColor(.black)
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.leading, isFullScreen ? 0 : 60) // Space for traffic lights when not fullscreen
+            .padding(.leading, isFullScreen ? 0 : 60)
             .frame(height: 38)
             .background(Color.white)
 
@@ -28,8 +45,16 @@ struct ContentView: View {
                 Color.white
 
                 switch viewModel.state {
-                case .dropZone:
-                    DropZoneView()
+                case .home:
+                    HomeView()
+                case .chapterLibrary:
+                    ChapterLibraryView()
+                case .chapterDetail:
+                    ChapterDetailView()
+                case .reading:
+                    ReadingView()
+                case .exerciseLibrary:
+                    ExerciseLibraryView()
                 case .loading:
                     LoadingView()
                 case .exercise:
@@ -50,6 +75,16 @@ struct ContentView: View {
                         }
                     }
                 }
+
+                if let sentence = viewModel.focusedSentence {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            viewModel.closeFocusedPhrase()
+                        }
+
+                    FocusedPhraseView(words: sentence)
+                }
             }
         }
         .frame(minWidth: 600, minHeight: 400)
@@ -66,12 +101,53 @@ struct ContentView: View {
             viewModel.toggleReference()
             return .handled
         }
+        .onKeyPress(.escape) {
+            handleEscape()
+            return .handled
+        }
+        .onKeyPress(.delete) {
+            handleBack()
+            return .handled
+        }
+    }
+
+    private func handleBack() {
+        switch viewModel.state {
+        case .chapterLibrary:
+            viewModel.goHome()
+        case .chapterDetail:
+            viewModel.backToChapterLibrary()
+        case .reading:
+            viewModel.backToChapterDetail()
+        case .exerciseLibrary:
+            if viewModel.selectedChapter != nil {
+                viewModel.backToChapterDetail()
+            } else {
+                viewModel.goToChapterLibrary()
+            }
+        case .exercise, .summary:
+            viewModel.reset()
+        case .error:
+            viewModel.reset()
+        default:
+            break
+        }
+    }
+
+    private func handleEscape() {
+        if viewModel.focusedSentence != nil {
+            viewModel.closeFocusedPhrase()
+        } else if viewModel.showReference {
+            viewModel.showReference = false
+        } else {
+            handleBack()
+        }
     }
 }
 
 struct ErrorView: View {
     let message: String
-    @EnvironmentObject var viewModel: ExerciseViewModel
+    @EnvironmentObject var viewModel: AppViewModel
 
     var body: some View {
         VStack(spacing: 20) {

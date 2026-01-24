@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ReferencePanel: View {
-    @EnvironmentObject var viewModel: ExerciseViewModel
+    @EnvironmentObject var viewModel: AppViewModel
 
     private let references = [
         ("Nominative", "Who? (subject)", "-a, -us, -um", "-ae, -ī, -a"),

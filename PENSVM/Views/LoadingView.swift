@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct LoadingView: View {
-    @EnvironmentObject var viewModel: ExerciseViewModel
+    @EnvironmentObject var viewModel: AppViewModel
 
     var body: some View {
         VStack(spacing: 20) {
