@@ -30,3 +30,4 @@ Package.resolved
 
 # Manual testing
 Samples/
+__pycache__/
