@@ -6,10 +6,19 @@ class AppViewModel: ObservableObject {
     @Published var state: AppState = .home
     @Published var showReference: Bool = false
     @Published var focusedSentence: [AnnotatedWord]?
+    @Published var focusedSentenceTranslation: String?
+    @Published var isLoadingTranslation: Bool = false
 
     // MARK: - Chapter State
     @Published var selectedChapter: Chapter?
     @Published var currentPageIndex: Int = 0
+
+    // MARK: - Reading State (for popover/prepared sentence)
+    @Published var readingSelectedWord: AnnotatedWord?
+    @Published var readingPreparedSentenceId: UUID?
+    @Published var readingPreparedSentenceWords: [AnnotatedWord]?
+    @Published var readingPageSentences: [(id: UUID, words: [AnnotatedWord])] = []
+    @Published var readingPreparedSentenceIndex: Int?
 
     // MARK: - Exercise State
     @Published var exercise: Exercise?
@@ -209,10 +218,91 @@ class AppViewModel: ObservableObject {
 
     func showFocusedSentence(_ words: [AnnotatedWord]) {
         focusedSentence = words
+        focusedSentenceTranslation = nil
+        isLoadingTranslation = true
+
+        // Build Latin text from words
+        let latinText = words.map { $0.text }.joined(separator: " ")
+            .replacingOccurrences(of: " ,", with: ",")
+            .replacingOccurrences(of: " .", with: ".")
+            .replacingOccurrences(of: " :", with: ":")
+            .replacingOccurrences(of: " ;", with: ";")
+            .replacingOccurrences(of: " ?", with: "?")
+            .replacingOccurrences(of: " !", with: "!")
+
+        Task {
+            do {
+                print("🔤 Translating: \(latinText)")
+                let translation = try await ClaudeCLIService().translateSentence(latinText)
+                print("✅ Translation: \(translation)")
+                self.focusedSentenceTranslation = translation
+            } catch {
+                print("❌ Translation error: \(error)")
+                // Show error message in UI
+                self.focusedSentenceTranslation = "Error: \(error.localizedDescription)"
+            }
+            self.isLoadingTranslation = false
+        }
     }
 
     func closeFocusedPhrase() {
         focusedSentence = nil
+        focusedSentenceTranslation = nil
+        isLoadingTranslation = false
+    }
+
+    /// Clears reading popover and prepared sentence state. Returns true if something was cleared.
+    func clearReadingActiveState() -> Bool {
+        let hadState = readingSelectedWord != nil || readingPreparedSentenceId != nil
+        readingSelectedWord = nil
+        readingPreparedSentenceId = nil
+        readingPreparedSentenceWords = nil
+        readingPreparedSentenceIndex = nil
+        return hadState
+    }
+
+    func openPreparedSentence() {
+        if let words = readingPreparedSentenceWords {
+            showFocusedSentence(words)
+            readingPreparedSentenceId = nil
+            readingPreparedSentenceWords = nil
+            readingPreparedSentenceIndex = nil
+        }
+    }
+
+    func prepareSentence(id: UUID, words: [AnnotatedWord], index: Int) {
+        readingPreparedSentenceId = id
+        readingPreparedSentenceWords = words
+        readingPreparedSentenceIndex = index
+    }
+
+    func nextPreparedSentence() {
+        guard !readingPageSentences.isEmpty else { return }
+
+        if let currentIndex = readingPreparedSentenceIndex {
+            let nextIndex = (currentIndex + 1) % readingPageSentences.count
+            let sentence = readingPageSentences[nextIndex]
+            prepareSentence(id: sentence.id, words: sentence.words, index: nextIndex)
+        } else {
+            // Start from first sentence
+            let sentence = readingPageSentences[0]
+            prepareSentence(id: sentence.id, words: sentence.words, index: 0)
+        }
+    }
+
+    func previousPreparedSentence() {
+        guard !readingPageSentences.isEmpty else { return }
+
+        if let currentIndex = readingPreparedSentenceIndex {
+            let prevIndex = currentIndex > 0 ? currentIndex - 1 : readingPageSentences.count - 1
+            let sentence = readingPageSentences[prevIndex]
+            prepareSentence(id: sentence.id, words: sentence.words, index: prevIndex)
+        } else {
+            // Start from last sentence
+            let lastIndex = readingPageSentences.count - 1
+            let sentence = readingPageSentences[lastIndex]
+            prepareSentence(id: sentence.id, words: sentence.words, index: lastIndex)
+        }
     }
 
     func reset() {

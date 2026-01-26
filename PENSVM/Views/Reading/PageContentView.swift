@@ -12,10 +12,20 @@ struct PageContentView: View {
     var column: String? = nil  // nil means show all content (backward compatible)
 
     @EnvironmentObject var viewModel: AppViewModel
-    @State private var selectedWord: AnnotatedWord?
-    @State private var preparedSentenceId: UUID?
     @State private var hoverTimer: Timer?
     @State private var cachedSentences: [UUID: [ReadingSentence]] = [:]  // block.id -> sentences
+    @State private var currentlyHoveredSentence: ReadingSentence?  // Track current hover for restart
+
+    // Convenience accessors to viewModel state
+    private var selectedWord: AnnotatedWord? {
+        get { viewModel.readingSelectedWord }
+        nonmutating set { viewModel.readingSelectedWord = newValue }
+    }
+
+    private var preparedSentenceId: UUID? {
+        get { viewModel.readingPreparedSentenceId }
+        nonmutating set { viewModel.readingPreparedSentenceId = newValue }
+    }
 
     private var baseDirectory: URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -51,8 +61,44 @@ struct PageContentView: View {
         }
         .padding(16)
         .background(Color.white)
-        .popover(item: $selectedWord) { word in
-            WordAnnotationPopover(word: word)
+        .overlayPreferenceValue(WordFrameKey.self) { anchors in
+            GeometryReader { geo in
+                if let word = selectedWord, let anchor = anchors[word.id] {
+                    let frame = geo[anchor]
+                    WordTooltip(word: word, wordFrame: frame) {
+                        viewModel.readingSelectedWord = nil
+                    }
+                }
+            }
+        }
+        .onAppear {
+            registerSentencesWithViewModel()
+        }
+        .onChange(of: page.id) { _ in
+            registerSentencesWithViewModel()
+        }
+        .onChange(of: viewModel.readingPreparedSentenceId) { newValue in
+            // When state is cleared (e.g., by ESC) and still hovering, restart timer
+            if newValue == nil, let sentence = currentlyHoveredSentence {
+                startHoverTimer(for: sentence)
+            }
+        }
+    }
+
+    private func registerSentencesWithViewModel() {
+        var allSentences: [(id: UUID, words: [AnnotatedWord])] = []
+        for block in filteredContent {
+            let sentences = getSentences(for: block)
+            for sentence in sentences {
+                allSentences.append((id: sentence.id, words: sentence.words))
+            }
+        }
+        // Only register if this is the main view (no column filter) or left column
+        if column == nil || column == "left" {
+            viewModel.readingPageSentences = allSentences
+        } else if column == "right" {
+            // Append right column sentences
+            viewModel.readingPageSentences.append(contentsOf: allSentences)
         }
     }
 
@@ -221,18 +267,22 @@ struct PageContentView: View {
 
     private func handleSentenceHover(isHovering: Bool, sentence: ReadingSentence) {
         if isHovering {
-            // Start 3-second timer to prepare sentence
-            hoverTimer?.invalidate()
-            hoverTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: false) { _ in
-                DispatchQueue.main.async {
-                    preparedSentenceId = sentence.id
-                }
-            }
+            currentlyHoveredSentence = sentence
+            startHoverTimer(for: sentence)
         } else {
-            // Cancel timer and clear prepared state
+            currentlyHoveredSentence = nil
             hoverTimer?.invalidate()
             hoverTimer = nil
-            preparedSentenceId = nil
+        }
+    }
+
+    private func startHoverTimer(for sentence: ReadingSentence) {
+        hoverTimer?.invalidate()
+        hoverTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: false) { _ in
+            DispatchQueue.main.async {
+                let index = viewModel.readingPageSentences.firstIndex { $0.id == sentence.id } ?? 0
+                viewModel.prepareSentence(id: sentence.id, words: sentence.words, index: index)
+            }
         }
     }
 
@@ -289,16 +339,16 @@ struct PageContentView: View {
             .font(.custom("Palatino", size: textSize(for: block)).weight(isBold(for: block) ? .bold : .regular))
             .italic(isItalic(for: block))
             .foregroundColor(textColor(for: block))
-            .background(isPrepared ? Color.black.opacity(0.05) : Color.clear)
+            .underline(isPrepared, color: .black)
             .contentShape(Rectangle())
+            .anchorPreference(key: WordFrameKey.self, value: .bounds) { anchor in
+                hasAnnotation ? [word.id: anchor] : [:]
+            }
             .onHover { isHovering in
                 handleSentenceHover(isHovering: isHovering, sentence: sentence)
             }
             .onTapGesture {
-                if isPrepared {
-                    viewModel.showFocusedSentence(sentence.words)
-                    preparedSentenceId = nil
-                } else if hasAnnotation {
+                if hasAnnotation {
                     selectedWord = word
                 }
             }
@@ -309,20 +359,35 @@ struct PageContentView: View {
 // MARK: - Word Annotation Popover
 // Compact popover: word, lemma - gloss, pos + form
 
-struct WordAnnotationPopover: View {
+// MARK: - Word Frame Preference Key
+
+struct WordFrameKey: PreferenceKey {
+    static var defaultValue: [UUID: Anchor<CGRect>] = [:]
+    static func reduce(value: inout [UUID: Anchor<CGRect>], nextValue: () -> [UUID: Anchor<CGRect>]) {
+        value.merge(nextValue()) { $1 }
+    }
+}
+
+// MARK: - Custom Word Tooltip
+
+struct WordTooltip: View {
     let word: AnnotatedWord
+    let wordFrame: CGRect
+    let onDismiss: () -> Void
+
+    @State private var tooltipSize: CGSize = .zero
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 2) {
             // Header: word + part of speech
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(word.text)
-                    .font(.custom("Palatino", size: 20))
+                    .font(.custom("Palatino", size: 16).bold())
                     .foregroundColor(.black)
                 if let posText = word.expandedPos {
                     Text(posText)
-                        .font(.custom("Palatino", size: 12))
-                        .foregroundColor(.black.opacity(0.5))
+                        .font(.custom("Palatino", size: 11))
+                        .foregroundColor(.black.opacity(0.4))
                 }
             }
 
@@ -331,28 +396,43 @@ struct WordAnnotationPopover: View {
                 HStack(spacing: 0) {
                     if let lemma = word.lemma {
                         Text(lemma)
-                            .font(.custom("Palatino", size: 14))
+                            .font(.custom("Palatino", size: 13))
                             .italic()
-                            .foregroundColor(.black)
+                            .foregroundColor(.black.opacity(0.7))
                     }
                     if let gloss = word.gloss {
-                        Text(word.lemma != nil ? " - \(gloss)" : gloss)
-                            .font(.custom("Palatino", size: 14))
-                            .foregroundColor(.black.opacity(0.6))
+                        Text(word.lemma != nil ? " – \(gloss)" : gloss)
+                            .font(.custom("Palatino", size: 13))
+                            .foregroundColor(.black.opacity(0.5))
                     }
                 }
             }
 
-            // Form only (pos moved to header)
+            // Form
             if let formText = word.expandedForm {
                 Text(formText)
-                    .font(.custom("Palatino", size: 12))
-                    .foregroundColor(.black.opacity(0.5))
+                    .font(.custom("Palatino", size: 11))
+                    .foregroundColor(.black.opacity(0.4))
             }
         }
-        .padding(10)
-        .background(Color.white)
-        .overlay(Rectangle().stroke(Color.black, lineWidth: 1))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(
+            GeometryReader { geo in
+                Color(white: 0.98)
+                    .onAppear { tooltipSize = geo.size }
+                    .onChange(of: geo.size) { tooltipSize = $0 }
+            }
+        )
+        .cornerRadius(4)
+        .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 2)
+        .position(
+            x: wordFrame.midX,
+            y: wordFrame.minY - tooltipSize.height / 2 - 4
+        )
+        .onTapGesture {
+            onDismiss()
+        }
     }
 }
 

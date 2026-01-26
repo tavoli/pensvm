@@ -33,6 +33,13 @@ struct ContentView: View {
                     Text("\(viewModel.currentPageIndex + 1) / \(viewModel.totalPages)")
                         .font(.custom("Palatino", size: 16))
                         .foregroundColor(.black)
+                        .padding(.trailing, 16)
+
+                    Button(action: { viewModel.goToExercises() }) {
+                        Text("Exercises")
+                            .font(.custom("Palatino", size: 14))
+                    }
+                    .buttonStyle(MinimalButtonStyle())
                 }
             }
             .padding(.horizontal, 16)
@@ -137,8 +144,12 @@ struct ContentView: View {
     private func handleEscape() {
         if viewModel.focusedSentence != nil {
             viewModel.closeFocusedPhrase()
+        } else if viewModel.clearReadingActiveState() {
+            // Cleared popover or prepared sentence state
         } else if viewModel.showReference {
             viewModel.showReference = false
+        } else if case .reading = viewModel.state {
+            // Do nothing - don't exit reading view with Escape
         } else {
             handleBack()
         }

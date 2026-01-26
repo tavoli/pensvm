@@ -4,6 +4,7 @@ struct FocusedPhraseView: View {
     let words: [AnnotatedWord]
     @EnvironmentObject var viewModel: AppViewModel
     @State private var selectedWord: AnnotatedWord?
+    @State private var isTranslationRevealed: Bool = false
 
     private var annotatedWords: [AnnotatedWord] {
         words.filter { $0.hasAnnotations }
@@ -59,12 +60,32 @@ struct FocusedPhraseView: View {
             }
             .frame(maxWidth: .infinity)
 
-            // Bottom info panel
+            // Bottom info panel - two rows
             VStack(spacing: 0) {
                 Rectangle()
                     .fill(Color.black)
                     .frame(height: 1)
 
+                // Row 1: Translation + Close button
+                HStack(alignment: .center) {
+                    translationBar
+
+                    Spacer()
+
+                    Button("Close") {
+                        viewModel.closeFocusedPhrase()
+                    }
+                    .buttonStyle(MinimalButtonStyle())
+                    .keyboardShortcut(.escape, modifiers: [])
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+
+                Rectangle()
+                    .fill(Color.black.opacity(0.1))
+                    .frame(height: 1)
+
+                // Row 2: Word info
                 HStack(alignment: .center) {
                     if let word = selectedWord {
                         wordInfoView(word)
@@ -76,15 +97,9 @@ struct FocusedPhraseView: View {
                     }
 
                     Spacer()
-
-                    Button("Close") {
-                        viewModel.closeFocusedPhrase()
-                    }
-                    .buttonStyle(MinimalButtonStyle())
-                    .keyboardShortcut(.escape, modifiers: [])
                 }
-                .padding(16)
-                .frame(height: 50)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -126,6 +141,46 @@ struct FocusedPhraseView: View {
                     selectedWord = word
                 }
             }
+    }
+
+    @ViewBuilder
+    private var translationBar: some View {
+        if viewModel.isLoadingTranslation {
+            // Loading state
+            Text("Translating...")
+                .font(.custom("Palatino", size: 14))
+                .foregroundColor(.black.opacity(0.4))
+                .italic()
+        } else if let translation = viewModel.focusedSentenceTranslation {
+            if translation.hasPrefix("Error:") {
+                // Error: show directly without spoiler
+                Text(translation)
+                    .font(.custom("Palatino", size: 14))
+                    .foregroundColor(.red.opacity(0.7))
+            } else if isTranslationRevealed {
+                // Revealed: show translation text
+                Text(translation)
+                    .font(.custom("Palatino", size: 14))
+                    .foregroundColor(.black.opacity(0.6))
+                    .onTapGesture {
+                        isTranslationRevealed = false
+                    }
+            } else {
+                // Hidden: black spoiler bar
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.black)
+                    .frame(width: max(CGFloat(translation.count) * 7, 100), height: 20)
+                    .onTapGesture {
+                        isTranslationRevealed = true
+                    }
+            }
+        } else {
+            // No translation available
+            Text("Translation unavailable")
+                .font(.custom("Palatino", size: 14))
+                .foregroundColor(.black.opacity(0.3))
+                .italic()
+        }
     }
 
     @ViewBuilder

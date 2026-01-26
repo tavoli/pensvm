@@ -21,8 +21,8 @@ struct ReadingView: View {
         }
         .background(Color.white)
         .overlay(alignment: .bottomTrailing) {
-            Button(action: { viewModel.goToExercises() }) {
-                Text("Exercises")
+            Button(action: { viewModel.toggleReference() }) {
+                Text("?")
                     .font(.custom("Palatino", size: 14))
             }
             .buttonStyle(MinimalButtonStyle())
@@ -32,6 +32,9 @@ struct ReadingView: View {
         .focused($isFocused)
         .focusEffectDisabled()
         .onAppear { isFocused = true }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
+            isFocused = true
+        }
         .onKeyPress(.rightArrow) {
             viewModel.nextPage()
             return .handled
@@ -46,6 +49,10 @@ struct ReadingView: View {
         }
         .onKeyPress(characters: CharacterSet(charactersIn: "pP")) { _ in
             viewModel.previousPage()
+            return .handled
+        }
+        .onKeyPress(.return) {
+            viewModel.openPreparedSentence()
             return .handled
         }
     }

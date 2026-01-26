@@ -29,11 +29,13 @@ class ClaudeCLIService {
 
     /// Resolves Claude CLI path in order of preference:
     /// 1. ~/.local/bin/claude (native binary - recommended)
-    /// 2. nvm node bin path (legacy npm install)
-    /// 3. /usr/local/bin/claude (fallback)
+    /// 2. ~/.bun/bin/claude (bun install)
+    /// 3. nvm node bin path (legacy npm install)
+    /// 4. /usr/local/bin/claude (fallback)
     private var claudePath: String {
         let candidates = [
             NSHomeDirectory() + "/.local/bin/claude",           // Native binary
+            NSHomeDirectory() + "/.bun/bin/claude",             // Bun install
             nvmClaudePath,                                       // Legacy npm via nvm
             "/usr/local/bin/claude"                              // System fallback
         ]
@@ -41,7 +43,7 @@ class ClaudeCLIService {
         return candidates.first { fileManager.fileExists(atPath: $0) } ?? candidates[0]
     }
 
-    private var nvmClaudePath: String {
+    private var nvmNodeBinPath: String {
         let nvmDir = NSHomeDirectory() + "/.nvm/versions/node"
         guard let versions = try? fileManager.contentsOfDirectory(atPath: nvmDir) else {
             return ""
@@ -59,9 +61,14 @@ class ClaudeCLIService {
             .first
 
         if let latest = latest {
-            return "\(nvmDir)/\(latest)/bin/claude"
+            return "\(nvmDir)/\(latest)/bin"
         }
         return ""
+    }
+
+    private var nvmClaudePath: String {
+        let binPath = nvmNodeBinPath
+        return binPath.isEmpty ? "" : "\(binPath)/claude"
     }
 
     // Automatically use mock data in Debug builds, real AI in Release
@@ -203,10 +210,11 @@ class ClaudeCLIService {
             "--no-session-persistence"
         ]
 
-        // Ensure ~/.local/bin is in PATH for native binary
+        // Ensure Claude CLI and Node.js paths are in PATH
         var env = ProcessInfo.processInfo.environment
         let currentPath = env["PATH"] ?? "/usr/bin:/bin"
-        env["PATH"] = "\(NSHomeDirectory())/.local/bin:\(currentPath)"
+        let nvmBin = nvmNodeBinPath
+        env["PATH"] = "\(NSHomeDirectory())/.local/bin:\(NSHomeDirectory())/.bun/bin:\(nvmBin):\(currentPath)"
         process.environment = env
 
         let outputPipe = Pipe()
@@ -327,5 +335,88 @@ class ClaudeCLIService {
             throw ClaudeCLIError.parseError("Invalid debug JSON")
         }
         return try parseSentences(sentencesJson)
+    }
+
+    // MARK: - Translation
+
+    func translateSentence(_ latinText: String) async throws -> String {
+        // DEBUG MODE: Return mock translation
+        if useDebugData {
+            print("🔧 DEBUG MODE: Using mock translation")
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s delay to simulate
+            return "In Italy there are many villas."
+        }
+
+        // Check if CLI exists
+        guard FileManager.default.fileExists(atPath: claudePath) else {
+            throw ClaudeCLIError.cliNotFound
+        }
+
+        let prompt = """
+        Translate this Latin sentence to English. Provide only the translation, nothing else.
+        Be literal and exact. Do not add explanations or notes.
+
+        Latin: \(latinText)
+        """
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: claudePath)
+        process.arguments = [
+            "-p", prompt,
+            "--output-format", "json",
+            "--no-session-persistence"
+        ]
+
+        // Ensure Claude CLI and Node.js paths are in PATH
+        var env = ProcessInfo.processInfo.environment
+        let currentPath = env["PATH"] ?? "/usr/bin:/bin"
+        let nvmBin = nvmNodeBinPath
+        env["PATH"] = "\(NSHomeDirectory())/.local/bin:\(NSHomeDirectory())/.bun/bin:\(nvmBin):\(currentPath)"
+        process.environment = env
+
+        let outputPipe = Pipe()
+        let errorPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = errorPipe
+
+        do {
+            try process.run()
+        } catch {
+            throw ClaudeCLIError.executionError(error.localizedDescription)
+        }
+
+        process.waitUntilExit()
+
+        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+
+        print("🔧 Claude CLI path: \(claudePath)")
+        print("🔧 Exit status: \(process.terminationStatus)")
+
+        if process.terminationStatus != 0 {
+            let errorMessage = String(data: errorData, encoding: .utf8) ?? "Unknown error"
+            print("❌ CLI stderr: \(errorMessage)")
+            throw ClaudeCLIError.executionError(errorMessage)
+        }
+
+        guard let output = String(data: outputData, encoding: .utf8) else {
+            throw ClaudeCLIError.invalidResponse
+        }
+
+        print("📝 Translation response: \(output)")
+
+        // Parse JSON response to extract result
+        guard let data = output.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw ClaudeCLIError.parseError("Could not parse JSON response")
+        }
+
+        print("📦 JSON keys: \(json.keys)")
+
+        guard let result = json["result"] as? String else {
+            throw ClaudeCLIError.parseError("Missing 'result' field in response. Keys: \(json.keys)")
+        }
+
+        return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
