@@ -3,6 +3,9 @@ import SwiftUI
 struct ReadingView: View {
     @EnvironmentObject var viewModel: AppViewModel
     @FocusState private var isFocused: Bool
+    @State private var cursorHidden = false
+    @State private var cursorTimer: Timer?
+    @State private var mouseMonitor: Any?
 
     var body: some View {
         GeometryReader { geometry in
@@ -32,9 +35,6 @@ struct ReadingView: View {
         .focused($isFocused)
         .focusEffectDisabled()
         .onAppear { isFocused = true }
-        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
-            isFocused = true
-        }
         .onKeyPress(.rightArrow) {
             viewModel.nextPage()
             return .handled
@@ -54,6 +54,52 @@ struct ReadingView: View {
         .onKeyPress(.return) {
             viewModel.openPreparedSentence()
             return .handled
+        }
+        .onAppear {
+            startCursorAutoHide()
+        }
+        .onDisappear {
+            stopCursorAutoHide()
+        }
+    }
+
+    private func startCursorAutoHide() {
+        resetCursorTimer()
+        mouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .leftMouseDown, .rightMouseDown, .scrollWheel]) { event in
+            showCursor()
+            resetCursorTimer()
+            return event
+        }
+    }
+
+    private func stopCursorAutoHide() {
+        cursorTimer?.invalidate()
+        cursorTimer = nil
+        if let monitor = mouseMonitor {
+            NSEvent.removeMonitor(monitor)
+            mouseMonitor = nil
+        }
+        showCursor()
+    }
+
+    private func resetCursorTimer() {
+        cursorTimer?.invalidate()
+        cursorTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: false) { _ in
+            hideCursor()
+        }
+    }
+
+    private func hideCursor() {
+        if !cursorHidden {
+            NSCursor.hide()
+            cursorHidden = true
+        }
+    }
+
+    private func showCursor() {
+        if cursorHidden {
+            NSCursor.unhide()
+            cursorHidden = false
         }
     }
 

@@ -5,8 +5,10 @@ struct ReferencePanel: View {
 
     private let references = [
         ("Nominative", "Who? (subject)", "-a, -us, -um", "-ae, -ī, -a"),
-        ("Accusative", "Who/What? (object)", "-am, -um", "-ās, -ōs, -a"),
-        ("Ablative", "Where? / With whom?", "-ā, -ō", "-īs"),
+        ("Accusative", "What? / To (place)", "-am, -um", "-ās, -ōs, -a"),
+        ("Genitive", "Whose? / Of what?", "-ae, -ī", "-ārum, -ōrum"),
+        ("Ablative", "With / From (place)", "-ā, -ō", "-īs"),
+        ("Locative", "At/In (place)", "-ae, -ī", "-īs"),
         ("Imperative", "Command", "-ā, -ē, -e, -ī", "-āte, -ēte, -ite, -īte"),
         ("Indicative", "Fact (he/she does)", "-at, -et, -it", "-ant, -ent, -unt, -iunt"),
     ]
@@ -76,7 +78,7 @@ struct ReferencePanel: View {
 
             Spacer()
         }
-        .frame(width: 520, height: 280)
+        .frame(width: 520, height: 320)
         .background(Color.white)
         .overlay(
             Rectangle()

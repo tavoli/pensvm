@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var viewModel: AppViewModel
     @State private var isFullScreen = false
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -103,7 +104,20 @@ struct ContentView: View {
             isFullScreen = false
         }
         .focusable()
+        .focused($isFocused)
         .focusEffectDisabled()
+        .onAppear { isFocused = true }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
+            isFocused = true
+        }
+        .onChange(of: viewModel.state) {
+            isFocused = true
+        }
+        .onChange(of: viewModel.focusedSentence == nil) { _, isNil in
+            if isNil {
+                isFocused = true
+            }
+        }
         .onKeyPress(characters: CharacterSet(charactersIn: "?")) { _ in
             viewModel.toggleReference()
             return .handled
