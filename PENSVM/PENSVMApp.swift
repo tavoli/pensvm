@@ -6,14 +6,17 @@ struct PENSVMApp: App {
     @StateObject private var viewModel = AppViewModel()
 
     init() {
-        // Register for app termination to save session
+        // Start the persistent Claude CLI service
+        ClaudeCLIService.shared.startPersistentService()
+
+        // Register for app termination
         NotificationCenter.default.addObserver(
             forName: NSApplication.willTerminateNotification,
             object: nil,
             queue: .main
         ) { _ in
-            // Note: We can't access viewModel here directly since it's not initialized yet
-            // The save will be handled by the SessionSaver view modifier
+            // Stop the persistent service on app quit
+            ClaudeCLIService.shared.stopPersistentService()
         }
     }
 

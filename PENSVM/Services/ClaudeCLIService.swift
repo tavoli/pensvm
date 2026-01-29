@@ -25,6 +25,17 @@ enum ClaudeCLIError: LocalizedError {
 }
 
 class ClaudeCLIService {
+    // MARK: - Singleton
+    static let shared = ClaudeCLIService()
+
+    // MARK: - Persistent Process Management
+    private var persistentProcess: Process?
+    private var stdin: FileHandle?
+    private var stdout: FileHandle?
+    private var outputBuffer: Data = Data()
+    private let outputQueue = DispatchQueue(label: "com.pensvm.claude.output")
+    private var pendingContinuation: CheckedContinuation<String, Error>?
+
     private let fileManager = FileManager.default
 
     /// Resolves Claude CLI path in order of preference:
@@ -69,6 +80,115 @@ class ClaudeCLIService {
     private var nvmClaudePath: String {
         let binPath = nvmNodeBinPath
         return binPath.isEmpty ? "" : "\(binPath)/claude"
+    }
+
+    // MARK: - Persistent Service Lifecycle
+
+    /// Starts the persistent Claude CLI service with streaming JSON mode
+    func startPersistentService() {
+        guard persistentProcess == nil else {
+            print("🔄 Persistent service already running")
+            return
+        }
+
+        guard fileManager.fileExists(atPath: claudePath) else {
+            print("❌ Claude CLI not found at \(claudePath)")
+            return
+        }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: claudePath)
+        process.arguments = [
+            "--input-format", "stream-json",
+            "--output-format", "stream-json",
+            "--verbose"
+        ]
+
+        // Set environment
+        var env = ProcessInfo.processInfo.environment
+        let currentPath = env["PATH"] ?? "/usr/bin:/bin"
+        let nvmBin = nvmNodeBinPath
+        env["PATH"] = "\(NSHomeDirectory())/.local/bin:\(NSHomeDirectory())/.bun/bin:\(nvmBin):\(currentPath)"
+        process.environment = env
+
+        let inputPipe = Pipe()
+        let outputPipe = Pipe()
+        process.standardInput = inputPipe
+        process.standardOutput = outputPipe
+        process.standardError = FileHandle.nullDevice
+
+        stdin = inputPipe.fileHandleForWriting
+        stdout = outputPipe.fileHandleForReading
+
+        // Set up async reading from stdout
+        outputPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+            let data = handle.availableData
+            guard !data.isEmpty else { return }
+
+            self?.outputQueue.async {
+                self?.outputBuffer.append(data)
+                self?.processOutputBuffer()
+            }
+        }
+
+        do {
+            try process.run()
+            persistentProcess = process
+            print("✅ Persistent Claude CLI service started")
+        } catch {
+            print("❌ Failed to start persistent service: \(error)")
+        }
+    }
+
+    /// Stops the persistent Claude CLI service
+    func stopPersistentService() {
+        guard let process = persistentProcess else { return }
+
+        stdout?.readabilityHandler = nil
+        stdin = nil
+        stdout = nil
+
+        process.terminate()
+        persistentProcess = nil
+        outputBuffer = Data()
+        print("🛑 Persistent Claude CLI service stopped")
+    }
+
+    /// Process the output buffer looking for complete JSON messages
+    private func processOutputBuffer() {
+        // Look for newline-delimited JSON messages
+        while let newlineIndex = outputBuffer.firstIndex(of: UInt8(ascii: "\n")) {
+            let messageData = outputBuffer.prefix(upTo: newlineIndex)
+            outputBuffer = Data(outputBuffer.suffix(from: outputBuffer.index(after: newlineIndex)))
+
+            guard !messageData.isEmpty,
+                  let _ = String(data: messageData, encoding: .utf8) else {
+                continue
+            }
+
+            // Parse the JSON message
+            guard let json = try? JSONSerialization.jsonObject(with: messageData) as? [String: Any] else {
+                continue
+            }
+
+            // Check for result message type
+            if let type = json["type"] as? String {
+                if type == "result" {
+                    if let result = json["result"] as? String {
+                        DispatchQueue.main.async { [weak self] in
+                            self?.pendingContinuation?.resume(returning: result)
+                            self?.pendingContinuation = nil
+                        }
+                    } else if let subtype = json["subtype"] as? String, subtype == "error_response" {
+                        let errorMsg = (json["error"] as? [String: Any])?["message"] as? String ?? "Unknown error"
+                        DispatchQueue.main.async { [weak self] in
+                            self?.pendingContinuation?.resume(throwing: ClaudeCLIError.executionError(errorMsg))
+                            self?.pendingContinuation = nil
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // Automatically use mock data in Debug builds, real AI in Release

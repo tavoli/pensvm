@@ -165,7 +165,8 @@ class AppViewModel: ObservableObject {
                         stem: storedPart.stem ?? "",
                         correctEnding: storedPart.correctEnding ?? "",
                         dictionaryForm: storedPart.dictionaryForm,
-                        wordType: storedPart.wordType
+                        wordType: storedPart.wordType,
+                        explanation: storedPart.explanation
                     ))
                 }
             }
@@ -207,7 +208,7 @@ class AppViewModel: ObservableObject {
     func handleEnter() {
         if isChecked {
             nextSentence()
-        } else {
+        } else if currentSentence?.allGapsAnswered == true {
             checkAnswers()
         }
     }

@@ -39,22 +39,34 @@ struct ExerciseView: View {
                 alignment: .top
             )
         }
-        .focusable()
+        .focusable(viewModel.isChecked)
         .focusEffectDisabled()
         .focused($isViewFocused)
         .onAppear {
+            // Delay focus to ensure view hierarchy is ready (especially on session restore)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                if !viewModel.isChecked {
+                    focusedGapIndex = 0
+                }
+            }
+        }
+        .onChange(of: viewModel.currentSentenceIndex) { _, _ in
             focusedGapIndex = 0
         }
         .onChange(of: viewModel.isChecked) { _, isChecked in
             if isChecked {
-                isViewFocused = true
+                focusedGapIndex = nil
+                DispatchQueue.main.async {
+                    isViewFocused = true
+                }
+            } else {
+                DispatchQueue.main.async {
+                    focusedGapIndex = 0
+                }
             }
         }
         .onKeyPress(.return) {
             viewModel.handleEnter()
-            if !viewModel.isChecked {
-                focusedGapIndex = 0
-            }
             return .handled
         }
     }
@@ -190,6 +202,14 @@ struct GapView: View {
                 Text("(\(gap.correctEnding))")
                     .font(.custom("Palatino", size: 16))
                     .foregroundColor(.black)
+
+                // Show explanation for incorrect answers
+                if let explanation = gap.explanation {
+                    Text(explanation)
+                        .font(.custom("Palatino", size: 14))
+                        .foregroundColor(.gray)
+                        .italic()
+                }
             }
         }
     }

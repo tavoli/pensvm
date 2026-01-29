@@ -69,6 +69,7 @@ struct StoredSentencePart: Identifiable, Codable {
     let correctEnding: String?    // For gap parts
     let dictionaryForm: String?   // For gap parts
     let wordType: String?         // For gap parts
+    let explanation: String?      // Grammar explanation for gap
 
     enum PartType: String, Codable {
         case text
@@ -84,6 +85,7 @@ struct StoredSentencePart: Identifiable, Codable {
         self.correctEnding = nil
         self.dictionaryForm = nil
         self.wordType = nil
+        self.explanation = nil
     }
 
     // Gap part initializer
@@ -92,7 +94,8 @@ struct StoredSentencePart: Identifiable, Codable {
         stem: String,
         correctEnding: String,
         dictionaryForm: String? = nil,
-        wordType: String? = nil
+        wordType: String? = nil,
+        explanation: String? = nil
     ) {
         self.id = id
         self.type = .gap
@@ -101,6 +104,7 @@ struct StoredSentencePart: Identifiable, Codable {
         self.correctEnding = correctEnding
         self.dictionaryForm = dictionaryForm
         self.wordType = wordType
+        self.explanation = explanation
     }
 
     // Full initializer for decoding
@@ -111,7 +115,8 @@ struct StoredSentencePart: Identifiable, Codable {
         stem: String? = nil,
         correctEnding: String? = nil,
         dictionaryForm: String? = nil,
-        wordType: String? = nil
+        wordType: String? = nil,
+        explanation: String? = nil
     ) {
         self.id = id
         self.type = type
@@ -120,5 +125,6 @@ struct StoredSentencePart: Identifiable, Codable {
         self.correctEnding = correctEnding
         self.dictionaryForm = dictionaryForm
         self.wordType = wordType
+        self.explanation = explanation
     }
 }

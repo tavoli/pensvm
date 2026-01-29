@@ -5,6 +5,15 @@ struct ContentView: View {
     @State private var isFullScreen = false
     @FocusState private var isFocused: Bool
 
+    /// ContentView should only be focusable when NOT in exercise input mode
+    /// (to avoid stealing focus from TextFields)
+    private var shouldContentViewBeFocusable: Bool {
+        if case .exercise = viewModel.state {
+            return viewModel.isChecked  // Only focusable when showing checked answers
+        }
+        return true
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Title bar area
@@ -103,18 +112,28 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.willExitFullScreenNotification)) { _ in
             isFullScreen = false
         }
-        .focusable()
+        .focusable(shouldContentViewBeFocusable)
         .focused($isFocused)
         .focusEffectDisabled()
-        .onAppear { isFocused = true }
-        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
-            isFocused = true
+        .onAppear {
+            if shouldContentViewBeFocusable {
+                isFocused = true
+            }
         }
-        .onChange(of: viewModel.state) {
-            isFocused = true
+        .onChange(of: viewModel.state) { _, newState in
+            // When leaving exercise, restore focus to ContentView
+            if case .exercise = newState {
+                // Don't steal focus from exercise TextFields
+            } else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    if shouldContentViewBeFocusable {
+                        isFocused = true
+                    }
+                }
+            }
         }
         .onChange(of: viewModel.focusedSentence == nil) { _, isNil in
-            if isNil {
+            if isNil && viewModel.state == .reading {
                 isFocused = true
             }
         }

@@ -83,14 +83,16 @@ struct Gap: Identifiable {
     let correctEnding: String
     let dictionaryForm: String?
     let wordType: String?
+    let explanation: String?  // Why this ending is correct (context-based)
     var userAnswer: String?
 
-    init(id: UUID = UUID(), stem: String, correctEnding: String, dictionaryForm: String? = nil, wordType: String? = nil, userAnswer: String? = nil) {
+    init(id: UUID = UUID(), stem: String, correctEnding: String, dictionaryForm: String? = nil, wordType: String? = nil, explanation: String? = nil, userAnswer: String? = nil) {
         self.id = id
         self.stem = stem
         self.correctEnding = correctEnding
         self.dictionaryForm = dictionaryForm
         self.wordType = wordType
+        self.explanation = explanation
         self.userAnswer = userAnswer
     }
 
