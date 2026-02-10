@@ -153,16 +153,22 @@ struct ReadingView: View {
             }
 
             // Left content column
-            PageContentView(page: page, column: "left")
-                .frame(width: columnWidth)
+            ScrollView(.vertical, showsIndicators: false) {
+                PageContentView(page: page, column: "left")
+                    .frame(width: columnWidth)
+            }
+            .frame(width: columnWidth)
 
             Rectangle()
                 .frame(width: dividerWidth)
                 .foregroundColor(.black)
 
             // Right content column
-            PageContentView(page: page, column: "right")
-                .frame(width: columnWidth)
+            ScrollView(.vertical, showsIndicators: false) {
+                PageContentView(page: page, column: "right")
+                    .frame(width: columnWidth)
+            }
+            .frame(width: columnWidth)
 
             // Right margin (if present)
             if hasRightMargin {
@@ -192,12 +198,18 @@ struct ReadingView: View {
                     .frame(width: 1)
                     .foregroundColor(.black)
 
-                PageContentView(page: page)
-                    .frame(width: contentWidth)
+                ScrollView(.vertical, showsIndicators: false) {
+                    PageContentView(page: page)
+                        .frame(width: contentWidth)
+                }
+                .frame(width: contentWidth)
             } else {
                 // Content on left (87.5%), margin on right (12.5%)
-                PageContentView(page: page)
-                    .frame(width: contentWidth)
+                ScrollView(.vertical, showsIndicators: false) {
+                    PageContentView(page: page)
+                        .frame(width: contentWidth)
+                }
+                .frame(width: contentWidth)
 
                 Rectangle()
                     .frame(width: 1)

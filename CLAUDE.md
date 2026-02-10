@@ -86,6 +86,36 @@ Expected response format (via `structured_output`):
 }
 ```
 
+## Slash Commands (`.claude/commands/`)
+
+| Command | File | Purpose |
+|---------|------|---------|
+| `/import` | `import.md` | Smart router — auto-classifies images as chapter or exercise, splits mixed spreads (grammar left + exercise right), routes accordingly |
+| `/import-chapter` | `import-chapter.md` | Imports LLPSI reading pages including GRAMMATICA LATINA sections. Detects grammar via headers, `[A]`/`[B]`/`[C]` markers, declension/conjugation patterns. Applies styles: `grammar-title`, `grammar-subtitle`, `grammar`, `italic` |
+| `/import-exercise` | `import-exercise.md` | Imports PENSVM exercise images (A, B, C). Requires `--chapter N`. Extracts gaps and generates explanations |
+| `/annotate-chapter` | `annotate-chapter.md` | Adds TOON word-level annotations (lemma, gloss, form, part-of-speech) to chapter content including grammar blocks |
+| `/release` | `release.md` | Builds Release version and installs to /Applications |
+
+## Chapter Data Storage
+
+- **Chapters:** `~/Library/Application Support/PENSVM/chapters/ch-{NN}/chapter.json`
+- **Exercises:** `~/Library/Application Support/PENSVM/chapters/ch-{NN}/exercises/ex-{II}/exercise.json`
+- **Library indexes:** `~/Library/Application Support/PENSVM/library.json` and `exercise-library.json`
+- **Scripts:** `scripts/extract_illustrations.py` — page layout processing (crop, split, margin/inline detection via Gemini)
+
+### Chapter JSON Structure
+
+Content blocks in `chapter.json` have:
+- `"style"`: one of `grammar-title`, `grammar-subtitle`, `grammar`, `italic`, or regular text
+- `"lineStart"` / `"lineEnd"`: line numbers (`null` for grammar-only pages)
+- TOON annotations: `words[N]{t,l,g,f,p}: <word>,<lemma>,<gloss>,<form>,<pos>`
+
+### Grammar Import Pipeline
+
+1. `/import` or `/import-chapter` extracts grammar content with proper styles (`grammar-title`, `grammar-subtitle`, `grammar`)
+2. `/annotate-chapter` adds TOON annotations to all text blocks including grammar sections
+3. Both steps are required — missing either results in grammar sections without styles or without annotations
+
 ## Key Behaviors
 
 - Accepts PNG, JPG, JPEG images
