@@ -428,7 +428,13 @@ struct WordTooltip: View {
         .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 2)
         .position(
             x: wordFrame.midX,
-            y: wordFrame.minY - tooltipSize.height / 2 - 4
+            y: {
+                let aboveY = wordFrame.minY - tooltipSize.height / 2 - 4
+                if aboveY - tooltipSize.height / 2 < 0 {
+                    return wordFrame.maxY + tooltipSize.height / 2 + 4
+                }
+                return aboveY
+            }()
         )
         .onTapGesture {
             onDismiss()

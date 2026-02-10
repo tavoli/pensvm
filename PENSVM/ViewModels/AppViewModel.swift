@@ -123,19 +123,11 @@ class AppViewModel: ObservableObject {
 
     // MARK: - Exercise Methods
 
-    func loadStoredExercise(sequenceNumber: Int) {
+    func loadStoredExercise(chapterNumber: Int, sequenceNumber: Int) {
         state = .loading
 
         Task {
             do {
-                // Find the exercise reference to get the chapter number
-                let exercises = try exerciseStorage.listExercises()
-                guard let ref = exercises.first(where: { $0.sequenceNumber == sequenceNumber }),
-                      let chapterNumber = ref.chapterNumber else {
-                    self.state = .error("Exercise not found")
-                    return
-                }
-
                 guard let stored = try exerciseStorage.loadExercise(chapterNumber: chapterNumber, sequenceNumber: sequenceNumber) else {
                     self.state = .error("Exercise not found")
                     return

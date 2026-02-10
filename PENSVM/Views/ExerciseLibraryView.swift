@@ -131,7 +131,8 @@ struct ExerciseLibraryView: View {
     }
 
     private func selectExercise(_ ref: ExerciseRef) {
-        viewModel.loadStoredExercise(sequenceNumber: ref.sequenceNumber)
+        guard let chapterNumber = ref.chapterNumber else { return }
+        viewModel.loadStoredExercise(chapterNumber: chapterNumber, sequenceNumber: ref.sequenceNumber)
     }
 }
 

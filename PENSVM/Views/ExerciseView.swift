@@ -65,6 +65,21 @@ struct ExerciseView: View {
                 }
             }
         }
+        .onKeyPress(.tab, phases: .down) { keyPress in
+            guard !viewModel.isChecked,
+                  let sentence = viewModel.currentSentence else { return .ignored }
+            let gapCount = sentence.gaps.count
+            guard gapCount > 0 else { return .ignored }
+
+            if keyPress.modifiers.contains(.shift) {
+                let current = focusedGapIndex ?? 1
+                focusedGapIndex = max(current - 1, 0)
+            } else {
+                let current = focusedGapIndex ?? -1
+                focusedGapIndex = min(current + 1, gapCount - 1)
+            }
+            return .handled
+        }
         .onKeyPress(.return) {
             viewModel.handleEnter()
             return .handled
