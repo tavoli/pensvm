@@ -3,14 +3,62 @@ import SwiftUI
 struct ReferencePanel: View {
     @EnvironmentObject var viewModel: AppViewModel
     @State private var selectedTab = 0
+    @State private var selectedDeclension = 0
 
-    private let references = [
-        ("Nominative", "Who? (subject)", "-a, -us, -um", "-ae, -ī, -a"),
-        ("Accusative", "What? / To (place)", "-am, -um", "-ās, -ōs, -a"),
-        ("Genitive", "Whose? / Of what?", "-ae, -ī", "-ārum, -ōrum"),
-        ("Dative", "To whom? / For?", "-ae, -ō", "-īs"),
-        ("Ablative", "With / From (place)", "-ā, -ō", "-īs"),
-        ("Locative", "At/In (place)", "-ae, -ī", "-īs"),
+    // Declension data: (case, question, singular, plural)
+    private let declensions: [[(String, String, String, String)]] = [
+        // I (-ae) — feminine
+        [
+            ("Nom.", "Who?", "-a", "-ae"),
+            ("Acc.", "What?", "-am", "-ās"),
+            ("Gen.", "Whose?", "-ae", "-ārum"),
+            ("Dat.", "To whom?", "-ae", "-īs"),
+            ("Abl.", "With/From", "-ā", "-īs"),
+            ("Loc.", "At/In (place)", "-ae", "-īs"),
+        ],
+        // II (-ī) — masculine/neuter
+        [
+            ("Nom.", "Who?", "-us / -um", "-ī / -a"),
+            ("Acc.", "What?", "-um", "-ōs / -a"),
+            ("Gen.", "Whose?", "-ī", "-ōrum"),
+            ("Dat.", "To whom?", "-ō", "-īs"),
+            ("Abl.", "With/From", "-ō", "-īs"),
+            ("Loc.", "At/In (place)", "-ī", "-īs"),
+        ],
+        // III (-is) — m/f/n
+        [
+            ("Nom.", "Who?", "-/s/x", "-ēs / -a/-ia"),
+            ("Acc.", "What?", "-em / -", "-ēs / -a/-ia"),
+            ("Gen.", "Whose?", "-is", "-um / -ium"),
+            ("Dat.", "To whom?", "-ī", "-ibus"),
+            ("Abl.", "With/From", "-e / -ī", "-ibus"),
+            ("Loc.", "At/In (place)", "-ī / -e", "-ibus"),
+        ],
+        // IV (-ūs) — masculine/neuter
+        [
+            ("Nom.", "Who?", "-us / -ū", "-ūs / -ua"),
+            ("Acc.", "What?", "-um / -ū", "-ūs / -ua"),
+            ("Gen.", "Whose?", "-ūs", "-uum"),
+            ("Dat.", "To whom?", "-uī / -ū", "-ibus"),
+            ("Abl.", "With/From", "-ū", "-ibus"),
+            ("Loc.", "At/In (place)", "-ū", "-ibus"),
+        ],
+        // V (-ēī) — feminine
+        [
+            ("Nom.", "Who?", "-ēs", "-ēs"),
+            ("Acc.", "What?", "-em", "-ēs"),
+            ("Gen.", "Whose?", "-ēī / -eī", "-ērum"),
+            ("Dat.", "To whom?", "-ēī / -eī", "-ēbus"),
+            ("Abl.", "With/From", "-ē", "-ēbus"),
+            ("Loc.", "At/In (place)", "-ē", "-ēbus"),
+        ],
+    ]
+
+    private let declensionTabs = [
+        "I (-ae)", "II (-ī)", "III (-is)", "IV (-ūs)", "V (-ēī)"
+    ]
+
+    private let verbEndings = [
         ("Imperative", "Command", "-ā, -ē, -e, -ī", "-āte, -ēte, -ite, -īte"),
         ("Indicative", "Fact (he/she does)", "-at, -et, -it", "-ant, -ent, -unt, -iunt"),
     ]
@@ -47,11 +95,14 @@ struct ReferencePanel: View {
 
             // Tab bar
             HStack(spacing: 0) {
-                TabButton(title: "Nouns/Adjectives", isSelected: selectedTab == 0) {
+                TabButton(title: "Nouns", isSelected: selectedTab == 0) {
                     selectedTab = 0
                 }
-                TabButton(title: "Pronouns", isSelected: selectedTab == 1) {
+                TabButton(title: "Verbs", isSelected: selectedTab == 1) {
                     selectedTab = 1
+                }
+                TabButton(title: "Pronouns", isSelected: selectedTab == 2) {
+                    selectedTab = 2
                 }
                 Spacer()
             }
@@ -60,14 +111,16 @@ struct ReferencePanel: View {
 
             // Content
             if selectedTab == 0 {
-                endingsTable
+                declensionContent
+            } else if selectedTab == 1 {
+                verbsTable
             } else {
                 pronounsTable
             }
 
             Spacer()
         }
-        .frame(width: 520, height: 360)
+        .frame(width: 520, height: 380)
         .background(Color.white)
         .overlay(
             Rectangle()
@@ -75,16 +128,41 @@ struct ReferencePanel: View {
         )
     }
 
-    private var endingsTable: some View {
+    // MARK: - Declension Content
+
+    private var declensionContent: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header row
+            // Declension sub-tabs
             HStack(spacing: 0) {
-                Text("Concept")
-                    .frame(width: 90, alignment: .leading)
+                ForEach(Array(declensionTabs.enumerated()), id: \.offset) { idx, title in
+                    Button(action: { selectedDeclension = idx }) {
+                        Text(title)
+                            .font(.system(size: 11))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(selectedDeclension == idx ? Color.black : Color.clear)
+                            .foregroundColor(selectedDeclension == idx ? .white : .black)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .overlay(
+                        Rectangle()
+                            .stroke(Color.black, lineWidth: 1)
+                    )
+                }
+                Spacer()
+            }
+            .padding(.horizontal)
+            .padding(.top, 8)
+            .padding(.bottom, 4)
+
+            // Table header
+            HStack(spacing: 0) {
+                Text("Case")
+                    .frame(width: 60, alignment: .leading)
                 Text("Question")
-                    .frame(width: 140, alignment: .leading)
+                    .frame(width: 120, alignment: .leading)
                 Text("Singular")
-                    .frame(width: 100, alignment: .leading)
+                    .frame(width: 140, alignment: .leading)
                 Text("Plural")
                     .frame(width: 140, alignment: .leading)
                 Spacer()
@@ -92,7 +170,6 @@ struct ReferencePanel: View {
             .fontWeight(.medium)
             .padding(.vertical, 8)
             .padding(.horizontal)
-            .background(Color.white)
             .overlay(
                 Rectangle()
                     .frame(height: 1)
@@ -101,15 +178,68 @@ struct ReferencePanel: View {
             )
 
             // Data rows
-            ForEach(references, id: \.0) { concept, question, singular, plural in
+            let rows = declensions[selectedDeclension]
+            ForEach(rows, id: \.0) { cas, question, singular, plural in
                 HStack(spacing: 0) {
-                    Text(concept)
-                        .frame(width: 90, alignment: .leading)
+                    Text(cas)
+                        .frame(width: 60, alignment: .leading)
                     Text(question)
+                        .foregroundColor(.black.opacity(0.6))
+                        .frame(width: 120, alignment: .leading)
+                    Text(singular)
+                        .fontWeight(.medium)
+                        .frame(width: 140, alignment: .leading)
+                    Text(plural)
+                        .fontWeight(.medium)
+                        .frame(width: 140, alignment: .leading)
+                    Spacer()
+                }
+                .padding(.vertical, 6)
+                .padding(.horizontal)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .foregroundColor(.black)
+    }
+
+    // MARK: - Verbs Table
+
+    private var verbsTable: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header row
+            HStack(spacing: 0) {
+                Text("Form")
+                    .frame(width: 90, alignment: .leading)
+                Text("Meaning")
+                    .frame(width: 140, alignment: .leading)
+                Text("Singular")
+                    .frame(width: 130, alignment: .leading)
+                Text("Plural")
+                    .frame(width: 140, alignment: .leading)
+                Spacer()
+            }
+            .fontWeight(.medium)
+            .padding(.vertical, 8)
+            .padding(.horizontal)
+            .overlay(
+                Rectangle()
+                    .frame(height: 1)
+                    .foregroundColor(.black),
+                alignment: .bottom
+            )
+
+            ForEach(verbEndings, id: \.0) { form, meaning, singular, plural in
+                HStack(spacing: 0) {
+                    Text(form)
+                        .frame(width: 90, alignment: .leading)
+                    Text(meaning)
+                        .foregroundColor(.black.opacity(0.6))
                         .frame(width: 140, alignment: .leading)
                     Text(singular)
-                        .frame(width: 100, alignment: .leading)
+                        .fontWeight(.medium)
+                        .frame(width: 130, alignment: .leading)
                     Text(plural)
+                        .fontWeight(.medium)
                         .frame(width: 140, alignment: .leading)
                     Spacer()
                 }
