@@ -55,6 +55,22 @@ struct ReadingView: View {
             viewModel.openPreparedSentence()
             return .handled
         }
+        .onKeyPress(characters: CharacterSet(charactersIn: "c"), phases: .down) { keyPress in
+            guard keyPress.modifiers.contains(.command) else { return .ignored }
+            if let words = viewModel.readingPreparedSentenceWords {
+                let text = words.map { $0.text }.joined(separator: " ")
+                    .replacingOccurrences(of: " ,", with: ",")
+                    .replacingOccurrences(of: " .", with: ".")
+                    .replacingOccurrences(of: " ;", with: ";")
+                    .replacingOccurrences(of: " :", with: ":")
+                    .replacingOccurrences(of: " !", with: "!")
+                    .replacingOccurrences(of: " ?", with: "?")
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(text, forType: .string)
+                return .handled
+            }
+            return .ignored
+        }
         .onAppear {
             startCursorAutoHide()
         }

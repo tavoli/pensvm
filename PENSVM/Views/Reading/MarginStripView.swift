@@ -9,24 +9,23 @@ struct MarginStripView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack {
-                if let path = assetPath {
-                    let imageURL = baseDirectory.appendingPathComponent(path)
-                    if let nsImage = NSImage(contentsOf: imageURL) {
-                        Image(nsImage: nsImage)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxWidth: .infinity)
-                    } else {
-                        placeholderView
-                    }
+        VStack {
+            if let path = assetPath {
+                let imageURL = baseDirectory.appendingPathComponent(path)
+                if let nsImage = NSImage(contentsOf: imageURL) {
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: .infinity)
                 } else {
                     placeholderView
                 }
+            } else {
+                placeholderView
             }
-            .padding(8)
+            Spacer()
         }
+        .padding(8)
         .background(Color.white)
     }
 

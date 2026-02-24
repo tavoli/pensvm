@@ -124,25 +124,44 @@ struct AnnotatedWord: Identifiable {
     }
 }
 
+// MARK: - Grammar Table Data (structured declension/conjugation tables)
+
+struct GrammarTableData: Codable {
+    let headers: [String]           // e.g. ["Singulāris", "Plūrālis"] or ["Masculīnum", "Fēminīnum", "Neutrum"]
+    let paradigms: [String]?        // e.g. ["[A]", "[B]"] for dual-paradigm tables
+    let rows: [GrammarTableRowData]
+}
+
+struct GrammarTableRowData: Codable {
+    let label: String               // Case label: "Nōm.", "Acc.", etc.
+    let numberPrefix: String?       // "Sing." or "Plūr." (ch-8 pronoun format)
+    let cells: [[String]]           // cells[colIdx] = words in cell, | for stem/ending
+}
+
 // MARK: - Content Block (text paragraph or inline image)
 
 struct ContentBlock: Identifiable, Codable {
     let id: UUID
     let type: ContentType
     let paragraph: String?       // text content (nil for images)
-    let style: String?           // "italic" for quoted text
+    let style: String?           // "italic", "grammar", "grammar-table", etc.
     let assetPath: String?       // relative path for inline images (e.g., "assets/06/inline-0-0.png")
     let description: String?     // alt text for images
     var column: String?          // "left", "right", or nil (defaults to right for backward compatibility)
     var toon: String?            // TOON format word annotations (parsed on-demand)
+    var tableData: GrammarTableData?  // structured table data for grammar-table blocks
 
     enum ContentType: String, Codable {
         case text
         case image
     }
 
+    private enum CodingKeys: String, CodingKey {
+        case id, type, paragraph, style, assetPath, description, column, toon, tableData
+    }
+
     // Text content initializer
-    init(id: UUID = UUID(), paragraph: String, style: String? = nil, column: String? = nil, toon: String? = nil) {
+    init(id: UUID = UUID(), paragraph: String, style: String? = nil, column: String? = nil, toon: String? = nil, tableData: GrammarTableData? = nil) {
         self.id = id
         self.type = .text
         self.paragraph = paragraph
@@ -151,6 +170,7 @@ struct ContentBlock: Identifiable, Codable {
         self.description = nil
         self.column = column
         self.toon = toon
+        self.tableData = tableData
     }
 
     // Image content initializer
@@ -163,10 +183,11 @@ struct ContentBlock: Identifiable, Codable {
         self.description = description
         self.column = column
         self.toon = nil
+        self.tableData = nil
     }
 
     // Full initializer (for decoding)
-    init(id: UUID = UUID(), type: ContentType, paragraph: String? = nil, style: String? = nil, assetPath: String? = nil, description: String? = nil, column: String? = nil, toon: String? = nil) {
+    init(id: UUID = UUID(), type: ContentType, paragraph: String? = nil, style: String? = nil, assetPath: String? = nil, description: String? = nil, column: String? = nil, toon: String? = nil, tableData: GrammarTableData? = nil) {
         self.id = id
         self.type = type
         self.paragraph = paragraph
@@ -175,6 +196,7 @@ struct ContentBlock: Identifiable, Codable {
         self.description = description
         self.column = column
         self.toon = toon
+        self.tableData = tableData
     }
 
     // For backward compatibility, nil column means "right" (default)

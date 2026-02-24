@@ -36,6 +36,7 @@
 		DD000008DDDD0008DDDD0008 /* FocusedPhraseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000008EEEE0008EEEE0008 /* FocusedPhraseView.swift */; };
 		DD000009DDDD0009DDDD0009 /* SessionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000009EEEE0009EEEE0009 /* SessionState.swift */; };
 		DD00000ADDDD000ADDDD000A /* SessionStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000AEEEE000AEEEE000A /* SessionStorageService.swift */; };
+		DD00000CDDDD000CDDDD000C /* GrammarTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000CEEEE000CEEEE000C /* GrammarTableView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -70,6 +71,7 @@
 		EE000008EEEE0008EEEE0008 /* FocusedPhraseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusedPhraseView.swift; sourceTree = "<group>"; };
 		EE000009EEEE0009EEEE0009 /* SessionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionState.swift; sourceTree = "<group>"; };
 		EE00000AEEEE000AEEEE000A /* SessionStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStorageService.swift; sourceTree = "<group>"; };
+		EE00000CEEEE000CEEEE000C /* GrammarTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrammarTableView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -147,6 +149,7 @@
 			isa = PBXGroup;
 			children = (
 				EE000008EEEE0008EEEE0008 /* FocusedPhraseView.swift */,
+				EE00000CEEEE000CEEEE000C /* GrammarTableView.swift */,
 				EE000006EEEE0006EEEE0006 /* MarginStripView.swift */,
 				EE000005EEEE0005EEEE0005 /* PageContentView.swift */,
 				EE000004EEEE0004EEEE0004 /* ReadingView.swift */,
@@ -280,6 +283,7 @@
 				DD000008DDDD0008DDDD0008 /* FocusedPhraseView.swift in Sources */,
 				DD000009DDDD0009DDDD0009 /* SessionState.swift in Sources */,
 				DD00000ADDDD000ADDDD000A /* SessionStorageService.swift in Sources */,
+				DD00000CDDDD000CDDDD000C /* GrammarTableView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

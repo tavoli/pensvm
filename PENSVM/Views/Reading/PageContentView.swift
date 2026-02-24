@@ -65,7 +65,7 @@ struct PageContentView: View {
             GeometryReader { geo in
                 if let word = selectedWord, let anchor = anchors[word.id] {
                     let frame = geo[anchor]
-                    WordTooltip(word: word, wordFrame: frame) {
+                    WordTooltip(word: word, wordFrame: frame, containerSize: geo.size) {
                         viewModel.readingSelectedWord = nil
                     }
                 }
@@ -88,6 +88,8 @@ struct PageContentView: View {
     private func registerSentencesWithViewModel() {
         var allSentences: [(id: UUID, words: [AnnotatedWord])] = []
         for block in filteredContent {
+            // Grammar-table blocks don't participate in sentence navigation
+            if block.style == "grammar-table" { continue }
             let sentences = getSentences(for: block)
             for sentence in sentences {
                 allSentences.append((id: sentence.id, words: sentence.words))
@@ -106,10 +108,20 @@ struct PageContentView: View {
     private func contentBlock(_ block: ContentBlock) -> some View {
         switch block.type {
         case .text:
-            let words = block.words
-            if !words.isEmpty {
+            if block.tableData != nil {
+                // Structured grammar table
+                GrammarTableView(
+                    block: block,
+                    selectedWord: Binding(
+                        get: { viewModel.readingSelectedWord },
+                        set: { viewModel.readingSelectedWord = $0 }
+                    )
+                )
+                .padding(.leading, textIndent(for: block))
+                .padding(.vertical, 2)
+            } else if !block.words.isEmpty {
                 // Render annotated words as tappable elements
-                annotatedTextView(words: words, block: block)
+                annotatedTextView(words: block.words, block: block)
                     .padding(.top, topPadding(for: block))
             } else if let paragraph = block.paragraph {
                 // Fallback: render plain paragraph text (no hover/focus for non-annotated text)
@@ -300,7 +312,7 @@ struct PageContentView: View {
         let sentences = getSentences(for: block)
 
         if block.style == "grammar" {
-            // Grammar content: each sentence on its own line
+            // Grammar prose: each sentence on its own line
             VStack(alignment: .leading, spacing: 2) {
                 ForEach(sentences) { sentence in
                     WrappingHStack(alignment: .leading, spacing: 0) {
@@ -373,6 +385,7 @@ struct WordFrameKey: PreferenceKey {
 struct WordTooltip: View {
     let word: AnnotatedWord
     let wordFrame: CGRect
+    let containerSize: CGSize
     let onDismiss: () -> Void
 
     @State private var tooltipSize: CGSize = .zero
@@ -427,7 +440,13 @@ struct WordTooltip: View {
         .cornerRadius(4)
         .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 2)
         .position(
-            x: wordFrame.midX,
+            x: {
+                let halfW = tooltipSize.width / 2
+                let margin: CGFloat = 4
+                let idealX = wordFrame.midX
+                // Clamp so tooltip stays within container bounds
+                return min(max(idealX, halfW + margin), containerSize.width - halfW - margin)
+            }(),
             y: {
                 let aboveY = wordFrame.minY - tooltipSize.height / 2 - 4
                 if aboveY - tooltipSize.height / 2 < 0 {
