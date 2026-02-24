@@ -221,7 +221,9 @@ class ClaudeCLIService {
                     "stem": { "type": "string" },
                     "correctEnding": { "type": "string" },
                     "dictionaryForm": { "type": "string" },
-                    "wordType": { "type": "string" }
+                    "wordType": { "type": "string" },
+                    "genitiveForm": { "type": "string" },
+                    "gender": { "type": "string" }
                   },
                   "required": ["type"]
                 }
@@ -278,7 +280,7 @@ class ClaudeCLIService {
             {
               "parts": [
                 {"type": "text", "content": "Iūlius in "},
-                {"type": "gap", "stem": "vīll", "correctEnding": "ā", "dictionaryForm": "vīlla", "wordType": "noun (1st decl)"},
+                {"type": "gap", "stem": "vīll", "correctEnding": "ā", "dictionaryForm": "vīlla", "wordType": "noun (1st decl)", "genitiveForm": "vīllae", "gender": "f"},
                 {"type": "text", "content": " habitat."}
               ]
             }
@@ -290,6 +292,7 @@ class ClaudeCLIService {
         - Use macrons (ā, ē, ī, ō, ū) in correctEnding when appropriate
         - EACH sentence ending with "." must be a SEPARATE object
         - ALWAYS include dictionaryForm and wordType for each gap
+        - ALWAYS include genitiveForm (full genitive form, e.g. "insulae", "servī", "pāstōris") and gender ("f", "m", or "n") for noun/adjective gaps
         """
     }
 
@@ -436,7 +439,9 @@ class ClaudeCLIService {
                     }
                     let dictionaryForm = partJson["dictionaryForm"] as? String
                     let wordType = partJson["wordType"] as? String
-                    return .gap(Gap(stem: stem, correctEnding: correctEnding, dictionaryForm: dictionaryForm, wordType: wordType))
+                    let genitiveForm = partJson["genitiveForm"] as? String
+                    let gender = partJson["gender"] as? String
+                    return .gap(Gap(stem: stem, correctEnding: correctEnding, dictionaryForm: dictionaryForm, wordType: wordType, genitiveForm: genitiveForm, gender: gender))
                 } else {
                     throw ClaudeCLIError.invalidResponse
                 }

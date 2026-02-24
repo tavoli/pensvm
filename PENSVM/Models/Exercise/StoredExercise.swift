@@ -70,6 +70,8 @@ struct StoredSentencePart: Identifiable, Codable {
     let dictionaryForm: String?   // For gap parts
     let wordType: String?         // For gap parts
     let explanation: String?      // Grammar explanation for gap
+    let genitiveForm: String?     // Genitive form (e.g., "insulae")
+    let gender: String?           // "f", "m", or "n"
 
     enum PartType: String, Codable {
         case text
@@ -86,6 +88,8 @@ struct StoredSentencePart: Identifiable, Codable {
         self.dictionaryForm = nil
         self.wordType = nil
         self.explanation = nil
+        self.genitiveForm = nil
+        self.gender = nil
     }
 
     // Gap part initializer
@@ -95,7 +99,9 @@ struct StoredSentencePart: Identifiable, Codable {
         correctEnding: String,
         dictionaryForm: String? = nil,
         wordType: String? = nil,
-        explanation: String? = nil
+        explanation: String? = nil,
+        genitiveForm: String? = nil,
+        gender: String? = nil
     ) {
         self.id = id
         self.type = .gap
@@ -105,6 +111,8 @@ struct StoredSentencePart: Identifiable, Codable {
         self.dictionaryForm = dictionaryForm
         self.wordType = wordType
         self.explanation = explanation
+        self.genitiveForm = genitiveForm
+        self.gender = gender
     }
 
     // Full initializer for decoding
@@ -116,7 +124,9 @@ struct StoredSentencePart: Identifiable, Codable {
         correctEnding: String? = nil,
         dictionaryForm: String? = nil,
         wordType: String? = nil,
-        explanation: String? = nil
+        explanation: String? = nil,
+        genitiveForm: String? = nil,
+        gender: String? = nil
     ) {
         self.id = id
         self.type = type
@@ -126,5 +136,7 @@ struct StoredSentencePart: Identifiable, Codable {
         self.dictionaryForm = dictionaryForm
         self.wordType = wordType
         self.explanation = explanation
+        self.genitiveForm = genitiveForm
+        self.gender = gender
     }
 }

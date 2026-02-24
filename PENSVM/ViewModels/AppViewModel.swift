@@ -158,7 +158,9 @@ class AppViewModel: ObservableObject {
                         correctEnding: storedPart.correctEnding ?? "",
                         dictionaryForm: storedPart.dictionaryForm,
                         wordType: storedPart.wordType,
-                        explanation: storedPart.explanation
+                        explanation: storedPart.explanation,
+                        genitiveForm: storedPart.genitiveForm,
+                        gender: storedPart.gender
                     ))
                 }
             }

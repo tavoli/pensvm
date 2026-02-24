@@ -147,86 +147,120 @@ struct GapView: View {
     @State private var showingDictionary: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 0) {
-                Text(gap.stem)
-                    .font(.custom("Palatino", size: 22))
-                    .foregroundColor(.black)
-                    .lineLimit(1)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .onTapGesture {
-                        if gap.dictionaryForm != nil {
-                            showingDictionary = true
-                        }
-                    }
-                    .popover(isPresented: $showingDictionary, arrowEdge: .bottom) {
-                        if let dictForm = gap.dictionaryForm {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(dictForm)
-                                    .font(.custom("Palatino", size: 18))
-                                    .fontWeight(.medium)
-                                if let wordType = gap.wordType {
-                                    Text(wordType)
-                                        .font(.custom("Palatino", size: 14))
-                                        .foregroundColor(.gray)
-                                }
-                            }
-                            .padding(8)
-                        }
-                    }
-
-                if isChecked {
-                    Text(gap.userAnswer ?? "")
-                        .font(.custom("Palatino", size: 22))
-                        .frame(minWidth: 40)
-                        .foregroundColor(gap.isCorrect == true ? .green : .black)
-                        .overlay(
-                            Rectangle()
-                                .frame(height: 1)
-                                .foregroundColor(gap.isCorrect == true ? .green : .black),
-                            alignment: .bottom
-                        )
-                } else {
-                    TextField("", text: $text)
-                        .font(.custom("Palatino", size: 22))
-                        .textFieldStyle(.plain)
-                        .frame(minWidth: 40)
-                        .foregroundColor(.black)
-                        .overlay(
-                        Rectangle()
-                            .frame(height: 1)
-                            .foregroundColor(.black),
-                        alignment: .bottom
-                    )
-                    .focused(focusedGapIndex, equals: gapNumber)
-                    .onChange(of: text) { _, newValue in
-                        viewModel.updateGapAnswer(
-                            sentenceIndex: sentenceIndex,
-                            partIndex: partIndex,
-                            answer: newValue
-                        )
-                    }
-                    .onAppear {
-                        text = gap.userAnswer ?? ""
+        HStack(spacing: 0) {
+            Text(gap.stem)
+                .font(.custom("Palatino", size: 22))
+                .foregroundColor(.black)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+                .onTapGesture {
+                    if gap.dictionaryForm != nil {
+                        showingDictionary = true
                     }
                 }
-            }
-            .fixedSize(horizontal: true, vertical: false)
+                .popover(isPresented: $showingDictionary, arrowEdge: .bottom) {
+                    if let _ = gap.dictionaryForm {
+                        Text(dictionaryHeadword(gap: gap))
+                            .font(.custom("Palatino", size: 18))
+                            .fontWeight(.medium)
+                            .padding(8)
+                    }
+                }
 
-            if isChecked && gap.isCorrect == false {
-                Text("(\(gap.correctEnding))")
-                    .font(.custom("Palatino", size: 16))
+            if isChecked {
+                Text(gap.userAnswer ?? "")
+                    .font(.custom("Palatino", size: 22))
+                    .frame(minWidth: 40)
+                    .foregroundColor(gap.isCorrect == true ? .green : .black)
+                    .overlay(
+                        Rectangle()
+                            .frame(height: 1)
+                            .foregroundColor(gap.isCorrect == true ? .green : .black),
+                        alignment: .bottom
+                    )
+                    .overlay(alignment: .topLeading) {
+                        if gap.isCorrect == false {
+                            let showBelow = gapNumber % 2 == 0
+                            VStack(alignment: .leading, spacing: 2) {
+                                if !showBelow, let explanation = gap.explanation {
+                                    Text(explanation)
+                                        .font(.custom("Palatino", size: 14))
+                                        .foregroundColor(.gray)
+                                        .italic()
+                                        .fixedSize(horizontal: true, vertical: false)
+                                }
+                                Text("(\(gap.correctEnding))")
+                                    .font(.custom("Palatino", size: 16))
+                                    .foregroundColor(.black)
+                                if showBelow, let explanation = gap.explanation {
+                                    Text(explanation)
+                                        .font(.custom("Palatino", size: 14))
+                                        .foregroundColor(.gray)
+                                        .italic()
+                                        .fixedSize(horizontal: true, vertical: false)
+                                }
+                            }
+                            .offset(y: showBelow ? 26 : -52)
+                        }
+                    }
+            } else {
+                TextField("", text: $text)
+                    .font(.custom("Palatino", size: 22))
+                    .textFieldStyle(.plain)
+                    .frame(minWidth: 40)
                     .foregroundColor(.black)
-
-                // Show explanation for incorrect answers
-                if let explanation = gap.explanation {
-                    Text(explanation)
-                        .font(.custom("Palatino", size: 14))
-                        .foregroundColor(.gray)
-                        .italic()
+                    .overlay(
+                    Rectangle()
+                        .frame(height: 1)
+                        .foregroundColor(.black),
+                    alignment: .bottom
+                )
+                .focused(focusedGapIndex, equals: gapNumber)
+                .onChange(of: text) { _, newValue in
+                    viewModel.updateGapAnswer(
+                        sentenceIndex: sentenceIndex,
+                        partIndex: partIndex,
+                        answer: newValue
+                    )
+                }
+                .onAppear {
+                    text = gap.userAnswer ?? ""
                 }
             }
         }
+        .fixedSize(horizontal: true, vertical: false)
+    }
+
+    /// Format dictionary headword: "insula, insulae, f." for nouns with data,
+    /// falls back to nominative + generic genitive ending for older exercises
+    private func dictionaryHeadword(gap: Gap) -> String {
+        guard let dictForm = gap.dictionaryForm else { return gap.stem }
+
+        // Full citation if we have genitive and gender
+        if let gen = gap.genitiveForm {
+            if let g = gap.gender {
+                return "\(dictForm), \(gen), \(g)."
+            }
+            return "\(dictForm), \(gen)"
+        }
+
+        // Fallback: generic genitive ending from declension
+        if let wt = gap.wordType?.lowercased() {
+            let genitiveEndings: [(String, String)] = [
+                ("1st decl", "-ae"),
+                ("2nd decl", "-ī"),
+                ("3rd decl", "-is"),
+                ("4th decl", "-ūs"),
+                ("5th decl", "-ēī"),
+            ]
+            for (declPattern, genEnding) in genitiveEndings {
+                if wt.contains(declPattern) {
+                    return "\(dictForm), \(genEnding)"
+                }
+            }
+        }
+
+        return dictForm
     }
 }
 
