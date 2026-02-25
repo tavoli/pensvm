@@ -58,6 +58,7 @@ struct ToonParser {
         var gloss: String?
         var form: String?
         var pos: String?
+        var alternativeGlosses: [String] = []
 
         for (index, field) in fields.enumerated() {
             guard index < values.count else { break }
@@ -69,7 +70,15 @@ struct ToonParser {
             case "l":
                 lemma = value.isEmpty ? nil : value
             case "g":
-                gloss = value.isEmpty ? nil : value
+                if value.isEmpty {
+                    gloss = nil
+                } else if value.contains("|") {
+                    let parts = value.components(separatedBy: "|")
+                    gloss = parts[0]
+                    alternativeGlosses = Array(parts.dropFirst())
+                } else {
+                    gloss = value
+                }
             case "f":
                 form = value.isEmpty ? nil : value
             case "p":
@@ -86,7 +95,8 @@ struct ToonParser {
             lemma: lemma,
             gloss: gloss,
             form: form,
-            pos: pos
+            pos: pos,
+            alternativeGlosses: alternativeGlosses
         )
     }
 

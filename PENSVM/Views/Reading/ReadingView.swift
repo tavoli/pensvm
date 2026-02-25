@@ -55,6 +55,15 @@ struct ReadingView: View {
             viewModel.openPreparedSentence()
             return .handled
         }
+        .onKeyPress(characters: CharacterSet(charactersIn: "1234")) { keyPress in
+            if viewModel.readingSelectedWord?.isPolysemous == true {
+                if let digit = Int(String(keyPress.characters)) {
+                    viewModel.readingDiscriminationSelection = digit
+                }
+                return .handled
+            }
+            return .ignored
+        }
         .onKeyPress(characters: CharacterSet(charactersIn: "c"), phases: .down) { keyPress in
             guard keyPress.modifiers.contains(.command) else { return .ignored }
             if let words = viewModel.readingPreparedSentenceWords {

@@ -19,6 +19,7 @@ class AppViewModel: ObservableObject {
     @Published var readingPreparedSentenceWords: [AnnotatedWord]?
     @Published var readingPageSentences: [(id: UUID, words: [AnnotatedWord])] = []
     @Published var readingPreparedSentenceIndex: Int?
+    @Published var readingDiscriminationSelection: Int?
 
     // MARK: - Exercise State
     @Published var exercise: Exercise?

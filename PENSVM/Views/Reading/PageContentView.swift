@@ -65,8 +65,21 @@ struct PageContentView: View {
             GeometryReader { geo in
                 if let word = selectedWord, let anchor = anchors[word.id] {
                     let frame = geo[anchor]
-                    WordTooltip(word: word, wordFrame: frame, containerSize: geo.size) {
-                        viewModel.readingSelectedWord = nil
+                    if word.isPolysemous {
+                        WordDiscriminationPopover(
+                            word: word,
+                            wordFrame: frame,
+                            containerSize: geo.size,
+                            keySelection: Binding(
+                                get: { viewModel.readingDiscriminationSelection },
+                                set: { viewModel.readingDiscriminationSelection = $0 }
+                            ),
+                            onDismiss: { viewModel.readingSelectedWord = nil }
+                        )
+                    } else {
+                        WordTooltip(word: word, wordFrame: frame, containerSize: geo.size) {
+                            viewModel.readingSelectedWord = nil
+                        }
                     }
                 }
             }
@@ -458,6 +471,157 @@ struct WordTooltip: View {
         .onTapGesture {
             onDismiss()
         }
+    }
+}
+
+// MARK: - Word Discrimination Popover
+
+struct WordDiscriminationPopover: View {
+    let word: AnnotatedWord
+    let wordFrame: CGRect
+    let containerSize: CGSize
+    @Binding var keySelection: Int?
+    let onDismiss: () -> Void
+
+    @State private var options: [String] = []
+    @State private var selectedIndex: Int?
+    @State private var isResolved: Bool = false
+    @State private var popoverSize: CGSize = .zero
+
+    private var correctGloss: String { word.gloss ?? "" }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // Header: word + POS
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(word.text)
+                    .font(.custom("Palatino", size: 16).bold())
+                    .foregroundColor(.black)
+                if let posText = word.expandedPos {
+                    Text(posText)
+                        .font(.custom("Palatino", size: 11))
+                        .foregroundColor(.black.opacity(0.4))
+                }
+            }
+
+            // Options
+            ForEach(Array(options.enumerated()), id: \.offset) { index, option in
+                optionRow(index: index, gloss: option)
+            }
+
+            // Post-resolution: show full word info
+            if isResolved {
+                Rectangle()
+                    .fill(Color.black.opacity(0.15))
+                    .frame(height: 1)
+                    .padding(.vertical, 2)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    if word.lemma != nil || word.gloss != nil {
+                        HStack(spacing: 0) {
+                            if let lemma = word.lemma {
+                                Text(lemma)
+                                    .font(.custom("Palatino", size: 13))
+                                    .italic()
+                                    .foregroundColor(.black.opacity(0.7))
+                            }
+                            if let gloss = word.gloss {
+                                Text(word.lemma != nil ? " – \(gloss)" : gloss)
+                                    .font(.custom("Palatino", size: 13))
+                                    .foregroundColor(.black.opacity(0.5))
+                            }
+                        }
+                    }
+                    if let formText = word.expandedForm {
+                        Text(formText)
+                            .font(.custom("Palatino", size: 11))
+                            .foregroundColor(.black.opacity(0.4))
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(
+            GeometryReader { geo in
+                Color(white: 0.98)
+                    .onAppear { popoverSize = geo.size }
+                    .onChange(of: geo.size) { popoverSize = $0 }
+            }
+        )
+        .cornerRadius(4)
+        .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 2)
+        .position(
+            x: {
+                let halfW = popoverSize.width / 2
+                let margin: CGFloat = 4
+                let idealX = wordFrame.midX
+                return min(max(idealX, halfW + margin), containerSize.width - halfW - margin)
+            }(),
+            y: {
+                let aboveY = wordFrame.minY - popoverSize.height / 2 - 4
+                if aboveY - popoverSize.height / 2 < 0 {
+                    return wordFrame.maxY + popoverSize.height / 2 + 4
+                }
+                return aboveY
+            }()
+        )
+        .onAppear {
+            var allOptions = [correctGloss] + word.alternativeGlosses
+            allOptions.shuffle()
+            options = allOptions
+        }
+        .onChange(of: keySelection) { newValue in
+            guard let pick = newValue, !isResolved else { return }
+            let index = pick - 1  // keys are 1-based
+            if index >= 0 && index < options.count {
+                resolve(index: index)
+            }
+            keySelection = nil
+        }
+        .onTapGesture {
+            if isResolved {
+                onDismiss()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func optionRow(index: Int, gloss: String) -> some View {
+        let isCorrect = gloss == correctGloss
+        let isSelected = selectedIndex == index
+        let showGreen = isResolved && isCorrect
+
+        HStack(spacing: 6) {
+            Text("\(index + 1)")
+                .font(.custom("Palatino", size: 12).bold())
+                .foregroundColor(.black.opacity(0.5))
+                .frame(width: 16)
+
+            Text(gloss)
+                .font(.custom("Palatino", size: 14))
+                .foregroundColor(.black)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(showGreen ? Color(red: 0, green: 1, blue: 0) : Color.white)
+        .overlay(
+            RoundedRectangle(cornerRadius: 3)
+                .stroke(isSelected && isResolved && !isCorrect ? Color.black : Color.black, lineWidth: 1)
+        )
+        .cornerRadius(3)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if !isResolved {
+                resolve(index: index)
+            }
+        }
+    }
+
+    private func resolve(index: Int) {
+        selectedIndex = index
+        isResolved = true
     }
 }
 

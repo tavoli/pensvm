@@ -5,6 +5,9 @@ struct FocusedPhraseView: View {
     @EnvironmentObject var viewModel: AppViewModel
     @State private var selectedWord: AnnotatedWord?
     @State private var isTranslationRevealed: Bool = false
+    @State private var discriminationOptions: [String] = []
+    @State private var discriminationSelected: Int?
+    @State private var discriminationResolved: Bool = false
 
     private var annotatedWords: [AnnotatedWord] {
         words.filter { $0.hasAnnotations }
@@ -115,6 +118,22 @@ struct FocusedPhraseView: View {
             selectNextWord()
             return .handled
         }
+        .onKeyPress(characters: CharacterSet(charactersIn: "1234")) { keyPress in
+            if let word = selectedWord, word.isPolysemous, !discriminationResolved {
+                if let digit = Int(String(keyPress.characters)) {
+                    let index = digit - 1
+                    if index >= 0 && index < discriminationOptions.count {
+                        discriminationSelected = index
+                        discriminationResolved = true
+                    }
+                }
+                return .handled
+            }
+            return .ignored
+        }
+        .onChange(of: selectedWord?.id) { _ in
+            resetDiscrimination()
+        }
     }
 
     @ViewBuilder
@@ -183,45 +202,113 @@ struct FocusedPhraseView: View {
         }
     }
 
+    private func resetDiscrimination() {
+        if let word = selectedWord, word.isPolysemous {
+            var allOptions = [word.gloss ?? ""] + word.alternativeGlosses
+            allOptions.shuffle()
+            discriminationOptions = allOptions
+        } else {
+            discriminationOptions = []
+        }
+        discriminationSelected = nil
+        discriminationResolved = false
+    }
+
     @ViewBuilder
     private func wordInfoView(_ word: AnnotatedWord) -> some View {
-        HStack(spacing: 0) {
-            // Word
-            Text(word.text)
-                .font(.custom("Palatino", size: 16))
-                .foregroundColor(.black)
+        if word.isPolysemous && !discriminationResolved {
+            // Inline discrimination: show options horizontally
+            HStack(spacing: 8) {
+                Text(word.text)
+                    .font(.custom("Palatino", size: 16).bold())
+                    .foregroundColor(.black)
 
-            // Part of speech
-            if let pos = word.expandedPos {
-                Text(" · ")
-                    .foregroundColor(.black.opacity(0.3))
-                Text(pos)
-                    .foregroundColor(.black.opacity(0.6))
-            }
-
-            // Lemma — gloss
-            if word.lemma != nil || word.gloss != nil {
-                Text(" · ")
-                    .foregroundColor(.black.opacity(0.3))
-                if let lemma = word.lemma {
-                    Text(lemma)
-                        .italic()
-                        .foregroundColor(.black)
+                if let pos = word.expandedPos {
+                    Text(pos)
+                        .font(.custom("Palatino", size: 13))
+                        .foregroundColor(.black.opacity(0.4))
                 }
-                if let gloss = word.gloss {
-                    Text(word.lemma != nil ? " — \(gloss)" : gloss)
+
+                Text("·")
+                    .foregroundColor(.black.opacity(0.3))
+
+                ForEach(Array(discriminationOptions.enumerated()), id: \.offset) { index, option in
+                    let isCorrect = option == (word.gloss ?? "")
+
+                    HStack(spacing: 4) {
+                        Text("\(index + 1)")
+                            .font(.custom("Palatino", size: 12).bold())
+                            .foregroundColor(.black.opacity(0.5))
+                        Text(option)
+                            .font(.custom("Palatino", size: 14))
+                            .foregroundColor(.black)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.white)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 3)
+                            .stroke(Color.black, lineWidth: 1)
+                    )
+                    .cornerRadius(3)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        discriminationSelected = index
+                        discriminationResolved = true
+                    }
+                }
+            }
+            .font(.custom("Palatino", size: 16))
+        } else {
+            // Standard word info (also shown after discrimination resolves)
+            HStack(spacing: 0) {
+                // Word
+                Text(word.text)
+                    .font(.custom("Palatino", size: 16))
+                    .foregroundColor(.black)
+
+                // Part of speech
+                if let pos = word.expandedPos {
+                    Text(" · ")
+                        .foregroundColor(.black.opacity(0.3))
+                    Text(pos)
                         .foregroundColor(.black.opacity(0.6))
                 }
-            }
 
-            // Form
-            if let form = word.expandedForm {
-                Text(" · ")
-                    .foregroundColor(.black.opacity(0.3))
-                Text(form)
-                    .foregroundColor(.black.opacity(0.6))
+                // Lemma — gloss
+                if word.lemma != nil || word.gloss != nil {
+                    Text(" · ")
+                        .foregroundColor(.black.opacity(0.3))
+                    if let lemma = word.lemma {
+                        Text(lemma)
+                            .italic()
+                            .foregroundColor(.black)
+                    }
+                    if let gloss = word.gloss {
+                        Text(word.lemma != nil ? " — \(gloss)" : gloss)
+                            .foregroundColor(.black.opacity(0.6))
+                    }
+                }
+
+                // Form
+                if let form = word.expandedForm {
+                    Text(" · ")
+                        .foregroundColor(.black.opacity(0.3))
+                    Text(form)
+                        .foregroundColor(.black.opacity(0.6))
+                }
+
+                // Show result indicator after discrimination
+                if word.isPolysemous && discriminationResolved {
+                    if let selected = discriminationSelected,
+                       selected < discriminationOptions.count {
+                        let pickedCorrectly = discriminationOptions[selected] == (word.gloss ?? "")
+                        Text(pickedCorrectly ? " · correct" : " · \(discriminationOptions[selected])")
+                            .foregroundColor(pickedCorrectly ? Color(red: 0, green: 0.6, blue: 0) : .black.opacity(0.4))
+                    }
+                }
             }
+            .font(.custom("Palatino", size: 16))
         }
-        .font(.custom("Palatino", size: 16))
     }
 }

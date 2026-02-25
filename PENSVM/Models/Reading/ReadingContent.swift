@@ -95,17 +95,24 @@ struct AnnotatedWord: Identifiable {
     let id: UUID
     let text: String              // The word as it appears (e.g., "viā")
     let lemma: String?            // Dictionary form (e.g., "via") - nil if same as text
-    let gloss: String?            // English translation (e.g., "road")
+    let gloss: String?            // English translation (e.g., "road") — context-correct meaning
     let form: String?             // Abbreviated morphology (e.g., "abl.s")
     let pos: String?              // Part of speech (e.g., "n", "v", "adj")
+    let alternativeGlosses: [String]  // Other real meanings for polysemous words
 
-    init(id: UUID = UUID(), text: String, lemma: String? = nil, gloss: String? = nil, form: String? = nil, pos: String? = nil) {
+    init(id: UUID = UUID(), text: String, lemma: String? = nil, gloss: String? = nil, form: String? = nil, pos: String? = nil, alternativeGlosses: [String] = []) {
         self.id = id
         self.text = text
         self.lemma = lemma
         self.gloss = gloss
         self.form = form
         self.pos = pos
+        self.alternativeGlosses = alternativeGlosses
+    }
+
+    /// Returns true if this word has multiple real meanings to discriminate
+    var isPolysemous: Bool {
+        !alternativeGlosses.isEmpty
     }
 
     /// Returns true if this word has any grammatical annotations
