@@ -8,10 +8,14 @@ import Foundation
 /// - l: lemma (dictionary form, empty if same as text)
 /// - g: gloss (English translation)
 /// - f: form (abbreviated morphology: "abl.s", "pres.3pl", etc.)
+/// - p: part of speech (e.g., "n", "v", "adj")
+/// - gn: genitive singular (e.g., "viae", "servī")
+/// - gd: gender (e.g., "f", "m", "n")
+/// - ir: irregular declension (1 = irregular, empty = regular)
 struct ToonParser {
 
     /// Parse a TOON string into an array of AnnotatedWord
-    static func parse(_ toon: String?) -> [AnnotatedWord] {
+    static func parse(_ toon: String?, glossNotes: [String: String]? = nil) -> [AnnotatedWord] {
         guard let toon = toon, !toon.isEmpty else { return [] }
 
         let lines = toon.components(separatedBy: "\n")
@@ -23,13 +27,16 @@ struct ToonParser {
 
         // Parse data rows
         var words: [AnnotatedWord] = []
+        var wordIndex = 0
         for i in 1..<lines.count {
             let line = lines[i]
             if line.isEmpty { continue }
 
-            if let word = parseRow(line, fields: fields) {
+            let explanation = glossNotes?[String(wordIndex)]
+            if let word = parseRow(line, fields: fields, explanation: explanation) {
                 words.append(word)
             }
+            wordIndex += 1
         }
 
         return words
@@ -49,7 +56,7 @@ struct ToonParser {
     }
 
     /// Parse a single CSV row into an AnnotatedWord
-    private static func parseRow(_ line: String, fields: [String]) -> AnnotatedWord? {
+    private static func parseRow(_ line: String, fields: [String], explanation: String? = nil) -> AnnotatedWord? {
         let values = parseCSVLine(line)
         guard values.count >= 1 else { return nil }
 
@@ -58,6 +65,9 @@ struct ToonParser {
         var gloss: String?
         var form: String?
         var pos: String?
+        var genitiveForm: String?
+        var gender: String?
+        var irregular: Bool = false
         var alternativeGlosses: [String] = []
 
         for (index, field) in fields.enumerated() {
@@ -83,6 +93,12 @@ struct ToonParser {
                 form = value.isEmpty ? nil : value
             case "p":
                 pos = value.isEmpty ? nil : value
+            case "gn":
+                genitiveForm = value.isEmpty ? nil : value
+            case "gd":
+                gender = value.isEmpty ? nil : value
+            case "ir":
+                irregular = value == "1"
             default:
                 break
             }
@@ -96,7 +112,11 @@ struct ToonParser {
             gloss: gloss,
             form: form,
             pos: pos,
-            alternativeGlosses: alternativeGlosses
+            genitiveForm: genitiveForm,
+            gender: gender,
+            irregular: irregular,
+            alternativeGlosses: alternativeGlosses,
+            explanation: explanation
         )
     }
 

@@ -544,4 +544,122 @@ class ClaudeCLIService {
 
         return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
+
+    // MARK: - Translation Review
+
+    private let reviewSchema = """
+    {
+      "type": "object",
+      "properties": {
+        "rating": { "type": "string", "enum": ["excellent", "good", "needs work"] },
+        "referenceTranslation": { "type": "string" },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["rating", "referenceTranslation", "notes"]
+    }
+    """
+
+    func reviewTranslation(latinText: String, userTranslation: String) async throws -> TranslationFeedback {
+        // DEBUG MODE: Return mock feedback
+        if useDebugData {
+            print("🔧 DEBUG MODE: Using mock translation review")
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            return TranslationFeedback(
+                rating: "good",
+                referenceTranslation: "In Italy there are many villas.",
+                notes: ["Consider using a more literal word order."]
+            )
+        }
+
+        guard FileManager.default.fileExists(atPath: claudePath) else {
+            throw ClaudeCLIError.cliNotFound
+        }
+
+        let prompt = """
+        You are evaluating an English translation of a Latin sentence.
+
+        Latin: \(latinText)
+        Student's translation: \(userTranslation)
+
+        Rate the translation and provide feedback.
+        - "excellent": captures meaning accurately with natural English
+        - "good": mostly correct but with minor issues
+        - "needs work": significant errors in meaning or grammar
+        Provide a reference translation and 0-3 brief notes on specific issues or praise.
+        """
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: claudePath)
+        process.arguments = [
+            "-p", prompt,
+            "--output-format", "json",
+            "--json-schema", reviewSchema,
+            "--no-session-persistence"
+        ]
+
+        var env = ProcessInfo.processInfo.environment
+        let currentPath = env["PATH"] ?? "/usr/bin:/bin"
+        let nvmBin = nvmNodeBinPath
+        env["PATH"] = "\(NSHomeDirectory())/.local/bin:\(NSHomeDirectory())/.bun/bin:\(nvmBin):\(currentPath)"
+        process.environment = env
+
+        let outputPipe = Pipe()
+        let errorPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = errorPipe
+
+        do {
+            try process.run()
+        } catch {
+            throw ClaudeCLIError.executionError(error.localizedDescription)
+        }
+
+        process.waitUntilExit()
+
+        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+
+        if process.terminationStatus != 0 {
+            let errorMessage = String(data: errorData, encoding: .utf8) ?? "Unknown error"
+            throw ClaudeCLIError.executionError(errorMessage)
+        }
+
+        guard let output = String(data: outputData, encoding: .utf8) else {
+            throw ClaudeCLIError.invalidResponse
+        }
+
+        // Parse JSON response
+        guard let data = output.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw ClaudeCLIError.parseError("Could not parse JSON response")
+        }
+
+        // Extract from structured_output (--json-schema mode)
+        if let structuredOutput = json["structured_output"] as? [String: Any] {
+            return try parseReviewFeedback(structuredOutput)
+        }
+
+        // Fallback: try result field
+        if let result = json["result"] as? String,
+           let resultData = result.data(using: .utf8),
+           let resultJson = try? JSONSerialization.jsonObject(with: resultData) as? [String: Any] {
+            return try parseReviewFeedback(resultJson)
+        }
+
+        throw ClaudeCLIError.parseError("Missing structured_output in review response")
+    }
+
+    private func parseReviewFeedback(_ json: [String: Any]) throws -> TranslationFeedback {
+        guard let rating = json["rating"] as? String,
+              let referenceTranslation = json["referenceTranslation"] as? String,
+              let notes = json["notes"] as? [String] else {
+            throw ClaudeCLIError.parseError("Invalid review feedback structure")
+        }
+
+        return TranslationFeedback(
+            rating: rating,
+            referenceTranslation: referenceTranslation,
+            notes: notes
+        )
+    }
 }

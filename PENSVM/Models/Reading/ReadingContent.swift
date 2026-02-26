@@ -89,7 +89,7 @@ struct Page: Identifiable, Codable {
 }
 
 // MARK: - Annotated Word (for word-level grammatical annotations)
-// Simplified TOON format: t=text, l=lemma, g=gloss, f=form
+// Simplified TOON format: t=text, l=lemma, g=gloss, f=form, p=pos, gn=genitive, gd=gender
 
 struct AnnotatedWord: Identifiable {
     let id: UUID
@@ -98,16 +98,24 @@ struct AnnotatedWord: Identifiable {
     let gloss: String?            // English translation (e.g., "road") — context-correct meaning
     let form: String?             // Abbreviated morphology (e.g., "abl.s")
     let pos: String?              // Part of speech (e.g., "n", "v", "adj")
+    let genitiveForm: String?     // Genitive singular (e.g., "viae", "servī", "leōnis")
+    let gender: String?           // Gender code (e.g., "f", "m", "n")
+    let irregular: Bool           // Irregular declension (pronomial adjectives, etc.)
     let alternativeGlosses: [String]  // Other real meanings for polysemous words
+    let explanation: String?      // Why the correct gloss fits this context (polysemous only)
 
-    init(id: UUID = UUID(), text: String, lemma: String? = nil, gloss: String? = nil, form: String? = nil, pos: String? = nil, alternativeGlosses: [String] = []) {
+    init(id: UUID = UUID(), text: String, lemma: String? = nil, gloss: String? = nil, form: String? = nil, pos: String? = nil, genitiveForm: String? = nil, gender: String? = nil, irregular: Bool = false, alternativeGlosses: [String] = [], explanation: String? = nil) {
         self.id = id
         self.text = text
         self.lemma = lemma
         self.gloss = gloss
         self.form = form
         self.pos = pos
+        self.genitiveForm = genitiveForm
+        self.gender = gender
+        self.irregular = irregular
         self.alternativeGlosses = alternativeGlosses
+        self.explanation = explanation
     }
 
     /// Returns true if this word has multiple real meanings to discriminate
@@ -128,6 +136,65 @@ struct AnnotatedWord: Identifiable {
     /// Returns expanded part of speech (e.g., "v" -> "verb")
     var expandedPos: String? {
         ToonParser.expandPos(pos)
+    }
+
+    /// Returns a short case label for inline superscript display (e.g., "nom.s" → "N", "acc.pl" → "Ac")
+    /// Returns nil for non-declined forms (verbs, adverbs, etc.)
+    var caseLabel: String? {
+        guard let form = form, !form.isEmpty else { return nil }
+        let parts = form.components(separatedBy: ".")
+        guard let casePart = parts.first else { return nil }
+        switch casePart {
+        case "nom": return "N"
+        case "gen": return "G"
+        case "dat": return "D"
+        case "acc": return "Ac"
+        case "abl": return "Ab"
+        case "voc": return "V"
+        case "loc": return "Lc"
+        default: return nil
+        }
+    }
+
+    /// Returns expanded gender (e.g., "f" -> "fem.")
+    var expandedGender: String? {
+        guard let gender = gender, !gender.isEmpty else { return nil }
+        switch gender {
+        case "f": return "fem."
+        case "m": return "masc."
+        case "n": return "neut."
+        default: return gender
+        }
+    }
+
+    /// Returns dictionary citation without gender (e.g., "bēstia, -ae")
+    /// Gender is rendered separately in the view with lighter styling
+    var dictionaryCitation: String? {
+        guard let lemma = lemma else { return nil }
+        guard pos == "n" || pos == "adj" else { return nil }
+
+        var result = lemma
+
+        if let gen = genitiveForm, !gen.isEmpty {
+            // Find the stem: longest prefix of lemma such that the genitive
+            // starts with it. But if the genitive starts with the entire lemma
+            // (e.g., "bēstia" / "bēstiae"), back off one character so the
+            // ending is "-ae" not "-e".
+            var shared = lemma.commonPrefix(with: gen)
+            if shared == lemma && gen.count > lemma.count {
+                // Genitive starts with full lemma — back off one char for a
+                // more natural ending (bēstia → -ae, not -e)
+                shared = String(shared.dropLast())
+            }
+            if shared.count >= 1 && shared.count < gen.count {
+                let ending = String(gen.dropFirst(shared.count))
+                result += ", -\(ending)"
+            } else {
+                result += ", \(gen)"
+            }
+        }
+
+        return result
     }
 }
 
@@ -157,6 +224,7 @@ struct ContentBlock: Identifiable, Codable {
     var column: String?          // "left", "right", or nil (defaults to right for backward compatibility)
     var toon: String?            // TOON format word annotations (parsed on-demand)
     var tableData: GrammarTableData?  // structured table data for grammar-table blocks
+    var glossNotes: [String: String]?  // word-index → explanation for polysemous words
 
     enum ContentType: String, Codable {
         case text
@@ -164,11 +232,11 @@ struct ContentBlock: Identifiable, Codable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, type, paragraph, style, assetPath, description, column, toon, tableData
+        case id, type, paragraph, style, assetPath, description, column, toon, tableData, glossNotes
     }
 
     // Text content initializer
-    init(id: UUID = UUID(), paragraph: String, style: String? = nil, column: String? = nil, toon: String? = nil, tableData: GrammarTableData? = nil) {
+    init(id: UUID = UUID(), paragraph: String, style: String? = nil, column: String? = nil, toon: String? = nil, tableData: GrammarTableData? = nil, glossNotes: [String: String]? = nil) {
         self.id = id
         self.type = .text
         self.paragraph = paragraph
@@ -178,6 +246,7 @@ struct ContentBlock: Identifiable, Codable {
         self.column = column
         self.toon = toon
         self.tableData = tableData
+        self.glossNotes = glossNotes
     }
 
     // Image content initializer
@@ -191,10 +260,11 @@ struct ContentBlock: Identifiable, Codable {
         self.column = column
         self.toon = nil
         self.tableData = nil
+        self.glossNotes = nil
     }
 
     // Full initializer (for decoding)
-    init(id: UUID = UUID(), type: ContentType, paragraph: String? = nil, style: String? = nil, assetPath: String? = nil, description: String? = nil, column: String? = nil, toon: String? = nil, tableData: GrammarTableData? = nil) {
+    init(id: UUID = UUID(), type: ContentType, paragraph: String? = nil, style: String? = nil, assetPath: String? = nil, description: String? = nil, column: String? = nil, toon: String? = nil, tableData: GrammarTableData? = nil, glossNotes: [String: String]? = nil) {
         self.id = id
         self.type = type
         self.paragraph = paragraph
@@ -204,6 +274,7 @@ struct ContentBlock: Identifiable, Codable {
         self.column = column
         self.toon = toon
         self.tableData = tableData
+        self.glossNotes = glossNotes
     }
 
     // For backward compatibility, nil column means "right" (default)
@@ -213,7 +284,7 @@ struct ContentBlock: Identifiable, Codable {
 
     /// Parse TOON string into AnnotatedWord array (computed on-demand)
     var words: [AnnotatedWord] {
-        ToonParser.parse(toon)
+        ToonParser.parse(toon, glossNotes: glossNotes)
     }
 
     /// Returns true if this block has word-level annotations

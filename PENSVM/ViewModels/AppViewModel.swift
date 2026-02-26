@@ -6,8 +6,8 @@ class AppViewModel: ObservableObject {
     @Published var state: AppState = .home
     @Published var showReference: Bool = false
     @Published var focusedSentence: [AnnotatedWord]?
-    @Published var focusedSentenceTranslation: String?
-    @Published var isLoadingTranslation: Bool = false
+    @Published var translationState: TranslationCompositionState = .writing
+    @Published var translationFeedback: TranslationFeedback?
 
     // MARK: - Chapter State
     @Published var selectedChapter: Chapter?
@@ -214,10 +214,13 @@ class AppViewModel: ObservableObject {
 
     func showFocusedSentence(_ words: [AnnotatedWord]) {
         focusedSentence = words
-        focusedSentenceTranslation = nil
-        isLoadingTranslation = true
+        translationState = .writing
+        translationFeedback = nil
+    }
 
-        // Build Latin text from words
+    func submitTranslation(userText: String) {
+        guard let words = focusedSentence else { return }
+
         let latinText = words.map { $0.text }.joined(separator: " ")
             .replacingOccurrences(of: " ,", with: ",")
             .replacingOccurrences(of: " .", with: ".")
@@ -226,25 +229,24 @@ class AppViewModel: ObservableObject {
             .replacingOccurrences(of: " ?", with: "?")
             .replacingOccurrences(of: " !", with: "!")
 
+        translationState = .loading
+
         Task {
             do {
-                print("🔤 Translating: \(latinText)")
-                let translation = try await ClaudeCLIService().translateSentence(latinText)
-                print("✅ Translation: \(translation)")
-                self.focusedSentenceTranslation = translation
+                let feedback = try await ClaudeCLIService().reviewTranslation(latinText: latinText, userTranslation: userText)
+                self.translationFeedback = feedback
+                self.translationState = .reviewed
             } catch {
-                print("❌ Translation error: \(error)")
-                // Show error message in UI
-                self.focusedSentenceTranslation = "Error: \(error.localizedDescription)"
+                self.translationFeedback = TranslationFeedback(rating: "error", referenceTranslation: error.localizedDescription, notes: [])
+                self.translationState = .reviewed
             }
-            self.isLoadingTranslation = false
         }
     }
 
     func closeFocusedPhrase() {
         focusedSentence = nil
-        focusedSentenceTranslation = nil
-        isLoadingTranslation = false
+        translationState = .writing
+        translationFeedback = nil
     }
 
     /// Clears reading popover and prepared sentence state. Returns true if something was cleared.
@@ -429,6 +431,11 @@ class AppViewModel: ObservableObject {
         }
     }
 
+    func retryTranslation() {
+        translationState = .writing
+        translationFeedback = nil
+    }
+
     private func restoreExerciseSession(_ session: SessionState) {
         guard let chapterNumber = session.exerciseChapterNumber,
               let sequenceNumber = session.exerciseSequenceNumber else {
@@ -464,4 +471,18 @@ class AppViewModel: ObservableObject {
         self.startTime = session.startTime
         self.state = .exercise
     }
+}
+
+// MARK: - Translation Composition
+
+enum TranslationCompositionState {
+    case writing    // text field visible, user composing
+    case loading    // "Checking..." shown, awaiting Claude
+    case reviewed   // feedback displayed
+}
+
+struct TranslationFeedback {
+    let rating: String           // "excellent", "good", "needs work", or "error"
+    let referenceTranslation: String
+    let notes: [String]
 }

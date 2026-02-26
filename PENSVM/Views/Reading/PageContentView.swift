@@ -76,6 +76,7 @@ struct PageContentView: View {
                             ),
                             onDismiss: { viewModel.readingSelectedWord = nil }
                         )
+                        .id(word.id)
                     } else {
                         WordTooltip(word: word, wordFrame: frame, containerSize: geo.size) {
                             viewModel.readingSelectedWord = nil
@@ -170,11 +171,11 @@ struct PageContentView: View {
     private func textSize(for block: ContentBlock) -> CGFloat {
         switch block.style {
         case "grammar-title":
-            return 20
+            return 22
         case "grammar-subtitle", "grammar", "grammar-label":
-            return 16
-        default:
             return 18
+        default:
+            return 20
         }
     }
 
@@ -340,7 +341,7 @@ struct PageContentView: View {
             .padding(.vertical, 2)
         } else {
             // Regular text: all sentences flow together
-            WrappingHStack(alignment: .leading, spacing: 0) {
+            WrappingHStack(alignment: .leading, spacing: 0, lineSpacing: 6) {
                 ForEach(sentences) { sentence in
                     ForEach(sentence.words) { word in
                         wordView(word, sentence: sentence, block: block)
@@ -364,7 +365,16 @@ struct PageContentView: View {
             .font(.custom("Palatino", size: textSize(for: block)).weight(isBold(for: block) ? .bold : .regular))
             .italic(isItalic(for: block))
             .foregroundColor(textColor(for: block))
-            .underline(isPrepared, color: .black)
+            .overlay(alignment: .topTrailing) {
+                if isPrepared, let label = word.caseLabel {
+                    Text(label)
+                        .font(.custom("Palatino", size: 9).weight(.semibold))
+                        .foregroundColor(Self.caseColor(for: label))
+                        .offset(y: -4)
+                        .transition(.opacity.combined(with: .scale(scale: 0.3, anchor: .bottomLeading)))
+                }
+            }
+            .animation(.easeOut(duration: 0.3), value: isPrepared)
             .contentShape(Rectangle())
             .anchorPreference(key: WordFrameKey.self, value: .bounds) { anchor in
                 hasAnnotation ? [word.id: anchor] : [:]
@@ -377,6 +387,19 @@ struct PageContentView: View {
                     selectedWord = word
                 }
             }
+    }
+
+    private static func caseColor(for label: String) -> Color {
+        switch label {
+        case "N":  return Color(red: 0.0, green: 0.25, blue: 0.85)  // bold blue — subject
+        case "Ac": return Color(red: 0.85, green: 0.4, blue: 0.0)   // bold orange — direct object
+        case "G":  return Color(red: 0.55, green: 0.1, blue: 0.7)   // bold purple — possession
+        case "D":  return Color(red: 0.0, green: 0.55, blue: 0.55)  // bold teal — indirect object
+        case "Ab": return Color(red: 0.8, green: 0.1, blue: 0.15)   // bold red — from/by/with
+        case "V":  return Color(red: 0.1, green: 0.6, blue: 0.1)    // bold green — address
+        case "Lc": return Color.black.opacity(0.6)                   // dark gray — place
+        default:   return Color.black.opacity(0.45)
+        }
     }
 
 }
@@ -405,40 +428,54 @@ struct WordTooltip: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            // Header: word + part of speech
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(word.text)
-                    .font(.custom("Palatino", size: 16).bold())
-                    .foregroundColor(.black)
+            // Header: dictionary citation · part of speech
+            HStack(alignment: .firstTextBaseline, spacing: 0) {
+                if let citation = word.dictionaryCitation {
+                    Text(citation)
+                        .font(.custom("Palatino", size: 15).bold())
+                        .foregroundColor(.black)
+                } else {
+                    Text(word.lemma ?? word.text)
+                        .font(.custom("Palatino", size: 15).bold())
+                        .foregroundColor(.black)
+                }
                 if let posText = word.expandedPos {
+                    Text(" · ")
+                        .font(.custom("Palatino", size: 11))
+                        .foregroundColor(.black.opacity(0.2))
                     Text(posText)
+                        .font(.custom("Palatino", size: 11))
+                        .foregroundColor(.black.opacity(0.4))
+                }
+                if word.irregular {
+                    Text(" · ")
+                        .font(.custom("Palatino", size: 11))
+                        .foregroundColor(.black.opacity(0.2))
+                    Text("irreg.")
                         .font(.custom("Palatino", size: 11))
                         .foregroundColor(.black.opacity(0.4))
                 }
             }
 
-            // Lemma - gloss
-            if word.lemma != nil || word.gloss != nil {
+            // Form + gender
+            if let formText = word.expandedForm {
                 HStack(spacing: 0) {
-                    if let lemma = word.lemma {
-                        Text(lemma)
-                            .font(.custom("Palatino", size: 13))
-                            .italic()
-                            .foregroundColor(.black.opacity(0.7))
-                    }
-                    if let gloss = word.gloss {
-                        Text(word.lemma != nil ? " – \(gloss)" : gloss)
-                            .font(.custom("Palatino", size: 13))
-                            .foregroundColor(.black.opacity(0.5))
+                    Text(formText)
+                        .font(.custom("Palatino", size: 11))
+                        .foregroundColor(.black.opacity(0.4))
+                    if let g = word.expandedGender {
+                        Text(" \(g)")
+                            .font(.custom("Palatino", size: 11))
+                            .foregroundColor(.black.opacity(0.4))
                     }
                 }
             }
 
-            // Form
-            if let formText = word.expandedForm {
-                Text(formText)
-                    .font(.custom("Palatino", size: 11))
-                    .foregroundColor(.black.opacity(0.4))
+            // Gloss
+            if let gloss = word.gloss {
+                Text(gloss)
+                    .font(.custom("Palatino", size: 13))
+                    .foregroundColor(.black.opacity(0.5))
             }
         }
         .padding(.horizontal, 10)
@@ -489,59 +526,83 @@ struct WordDiscriminationPopover: View {
     @State private var popoverSize: CGSize = .zero
 
     private var correctGloss: String { word.gloss ?? "" }
+    private var pickedCorrectly: Bool {
+        guard let idx = selectedIndex, idx < options.count else { return false }
+        return options[idx] == correctGloss
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            // Header: word + POS
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(word.text)
-                    .font(.custom("Palatino", size: 16).bold())
-                    .foregroundColor(.black)
+        VStack(alignment: .leading, spacing: 4) {
+            // Header: citation + POS
+            HStack(alignment: .firstTextBaseline, spacing: 0) {
+                if let citation = word.dictionaryCitation {
+                    Text(citation)
+                        .font(.custom("Palatino", size: 15).bold())
+                        .foregroundColor(.black)
+                } else {
+                    Text(word.lemma ?? word.text)
+                        .font(.custom("Palatino", size: 15).bold())
+                        .foregroundColor(.black)
+                }
                 if let posText = word.expandedPos {
+                    Text(" · ")
+                        .font(.custom("Palatino", size: 11))
+                        .foregroundColor(.black.opacity(0.2))
                     Text(posText)
+                        .font(.custom("Palatino", size: 11))
+                        .foregroundColor(.black.opacity(0.4))
+                }
+                if word.irregular {
+                    Text(" · ")
+                        .font(.custom("Palatino", size: 11))
+                        .foregroundColor(.black.opacity(0.2))
+                    Text("irreg.")
                         .font(.custom("Palatino", size: 11))
                         .foregroundColor(.black.opacity(0.4))
                 }
             }
 
-            // Options
-            ForEach(Array(options.enumerated()), id: \.offset) { index, option in
-                optionRow(index: index, gloss: option)
+            // Options — horizontal flow
+            HStack(spacing: 6) {
+                ForEach(Array(options.enumerated()), id: \.offset) { index, option in
+                    optionChip(index: index, gloss: option)
+                }
             }
 
-            // Post-resolution: show full word info
+            // Post-resolution: word info + explanation
             if isResolved {
                 Rectangle()
                     .fill(Color.black.opacity(0.15))
                     .frame(height: 1)
-                    .padding(.vertical, 2)
+                    .padding(.top, 2)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    if word.lemma != nil || word.gloss != nil {
-                        HStack(spacing: 0) {
-                            if let lemma = word.lemma {
-                                Text(lemma)
-                                    .font(.custom("Palatino", size: 13))
-                                    .italic()
-                                    .foregroundColor(.black.opacity(0.7))
-                            }
-                            if let gloss = word.gloss {
-                                Text(word.lemma != nil ? " – \(gloss)" : gloss)
-                                    .font(.custom("Palatino", size: 13))
-                                    .foregroundColor(.black.opacity(0.5))
-                            }
-                        }
+                HStack(spacing: 0) {
+                    if let lemma = word.lemma {
+                        Text(lemma)
+                            .font(.custom("Palatino", size: 12))
+                            .italic()
+                            .foregroundColor(.black.opacity(0.6))
                     }
                     if let formText = word.expandedForm {
-                        Text(formText)
+                        Text(" · \(formText)")
                             .font(.custom("Palatino", size: 11))
                             .foregroundColor(.black.opacity(0.4))
                     }
                 }
+
+                if !pickedCorrectly, let explanation = word.explanation {
+                    Text(explanation)
+                        .font(.custom("Palatino", size: 12))
+                        .foregroundColor(.black.opacity(0.5))
+                        .italic()
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: 280, alignment: .leading)
+                }
             }
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
+        .fixedSize()
         .background(
             GeometryReader { geo in
                 Color(white: 0.98)
@@ -559,11 +620,13 @@ struct WordDiscriminationPopover: View {
                 return min(max(idealX, halfW + margin), containerSize.width - halfW - margin)
             }(),
             y: {
-                let aboveY = wordFrame.minY - popoverSize.height / 2 - 4
-                if aboveY - popoverSize.height / 2 < 0 {
-                    return wordFrame.maxY + popoverSize.height / 2 + 4
+                // Prefer below the word so the sentence context above stays visible
+                let belowY = wordFrame.maxY + popoverSize.height / 2 + 4
+                if belowY + popoverSize.height / 2 > containerSize.height {
+                    // Fall back to above if no room below
+                    return wordFrame.minY - popoverSize.height / 2 - 4
                 }
-                return aboveY
+                return belowY
             }()
         )
         .onAppear {
@@ -573,7 +636,7 @@ struct WordDiscriminationPopover: View {
         }
         .onChange(of: keySelection) { newValue in
             guard let pick = newValue, !isResolved else { return }
-            let index = pick - 1  // keys are 1-based
+            let index = pick - 1
             if index >= 0 && index < options.count {
                 resolve(index: index)
             }
@@ -587,28 +650,28 @@ struct WordDiscriminationPopover: View {
     }
 
     @ViewBuilder
-    private func optionRow(index: Int, gloss: String) -> some View {
+    private func optionChip(index: Int, gloss: String) -> some View {
         let isCorrect = gloss == correctGloss
         let isSelected = selectedIndex == index
         let showGreen = isResolved && isCorrect
+        let showWrong = isResolved && isSelected && !isCorrect
 
-        HStack(spacing: 6) {
+        HStack(spacing: 3) {
             Text("\(index + 1)")
-                .font(.custom("Palatino", size: 12).bold())
-                .foregroundColor(.black.opacity(0.5))
-                .frame(width: 16)
+                .font(.custom("Palatino", size: 11).bold())
+                .foregroundColor(showWrong ? .black.opacity(0.2) : .black.opacity(0.4))
 
             Text(gloss)
-                .font(.custom("Palatino", size: 14))
-                .foregroundColor(.black)
+                .font(.custom("Palatino", size: 13))
+                .strikethrough(showWrong)
+                .foregroundColor(showWrong ? .black.opacity(0.3) : .black)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
         .background(showGreen ? Color(red: 0, green: 1, blue: 0) : Color.white)
         .overlay(
             RoundedRectangle(cornerRadius: 3)
-                .stroke(isSelected && isResolved && !isCorrect ? Color.black : Color.black, lineWidth: 1)
+                .stroke(showWrong ? Color.black.opacity(0.3) : Color.black, lineWidth: 1)
         )
         .cornerRadius(3)
         .contentShape(Rectangle())
@@ -630,14 +693,15 @@ struct WordDiscriminationPopover: View {
 struct WrappingHStack: Layout {
     var alignment: HorizontalAlignment = .leading
     var spacing: CGFloat = 0
+    var lineSpacing: CGFloat = 0
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let result = FlowResult(in: proposal.width ?? 0, subviews: subviews, spacing: spacing)
+        let result = FlowResult(in: proposal.width ?? 0, subviews: subviews, spacing: spacing, lineSpacing: lineSpacing)
         return result.size
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let result = FlowResult(in: bounds.width, subviews: subviews, spacing: spacing)
+        let result = FlowResult(in: bounds.width, subviews: subviews, spacing: spacing, lineSpacing: lineSpacing)
 
         for (index, subview) in subviews.enumerated() {
             let point = result.positions[index]
@@ -649,7 +713,7 @@ struct WrappingHStack: Layout {
         var size: CGSize = .zero
         var positions: [CGPoint] = []
 
-        init(in containerWidth: CGFloat, subviews: Subviews, spacing: CGFloat) {
+        init(in containerWidth: CGFloat, subviews: Subviews, spacing: CGFloat, lineSpacing: CGFloat = 0) {
             var x: CGFloat = 0
             var y: CGFloat = 0
             var lineHeight: CGFloat = 0
@@ -660,7 +724,7 @@ struct WrappingHStack: Layout {
                 // Check if we need to wrap to next line
                 if x + size.width > containerWidth && x > 0 {
                     x = 0
-                    y += lineHeight + spacing
+                    y += lineHeight + (lineSpacing > 0 ? lineSpacing : spacing)
                     lineHeight = 0
                 }
 

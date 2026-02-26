@@ -4,7 +4,8 @@ struct FocusedPhraseView: View {
     let words: [AnnotatedWord]
     @EnvironmentObject var viewModel: AppViewModel
     @State private var selectedWord: AnnotatedWord?
-    @State private var isTranslationRevealed: Bool = false
+    @State private var translationText: String = ""
+    @FocusState private var isTextFieldFocused: Bool
     @State private var discriminationOptions: [String] = []
     @State private var discriminationSelected: Int?
     @State private var discriminationResolved: Bool = false
@@ -37,8 +38,8 @@ struct FocusedPhraseView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Phrase area - centered vertically, text flows naturally
-            VStack {
+            // Content area - sentence + inline translation
+            VStack(spacing: 32) {
                 Spacer()
 
                 if words.isEmpty {
@@ -59,36 +60,19 @@ struct FocusedPhraseView: View {
                     }
                 }
 
+                // Inline translation area
+                translationArea
+
                 Spacer()
             }
             .frame(maxWidth: .infinity)
 
-            // Bottom info panel - two rows
+            // Bottom bar - single row: word info + Close
             VStack(spacing: 0) {
                 Rectangle()
                     .fill(Color.black)
                     .frame(height: 1)
 
-                // Row 1: Translation + Close button
-                HStack(alignment: .center) {
-                    translationBar
-
-                    Spacer()
-
-                    Button("Close") {
-                        viewModel.closeFocusedPhrase()
-                    }
-                    .buttonStyle(MinimalButtonStyle())
-                    .keyboardShortcut(.escape, modifiers: [])
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-
-                Rectangle()
-                    .fill(Color.black.opacity(0.1))
-                    .frame(height: 1)
-
-                // Row 2: Word info
                 HStack(alignment: .center) {
                     if let word = selectedWord {
                         wordInfoView(word)
@@ -100,6 +84,12 @@ struct FocusedPhraseView: View {
                     }
 
                     Spacer()
+
+                    Button("Close") {
+                        viewModel.closeFocusedPhrase()
+                    }
+                    .buttonStyle(MinimalButtonStyle())
+                    .keyboardShortcut(.escape, modifiers: [])
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
@@ -111,14 +101,17 @@ struct FocusedPhraseView: View {
         .focusable()
         .focusEffectDisabled()
         .onKeyPress(.leftArrow) {
+            guard !isTextFieldFocused else { return .ignored }
             selectPreviousWord()
             return .handled
         }
         .onKeyPress(.rightArrow) {
+            guard !isTextFieldFocused else { return .ignored }
             selectNextWord()
             return .handled
         }
         .onKeyPress(characters: CharacterSet(charactersIn: "1234")) { keyPress in
+            guard !isTextFieldFocused else { return .ignored }
             if let word = selectedWord, word.isPolysemous, !discriminationResolved {
                 if let digit = Int(String(keyPress.characters)) {
                     let index = digit - 1
@@ -133,6 +126,10 @@ struct FocusedPhraseView: View {
         }
         .onChange(of: selectedWord?.id) { _ in
             resetDiscrimination()
+        }
+        .onChange(of: viewModel.focusedSentence?.first?.id) { _ in
+            translationText = ""
+            isTextFieldFocused = false
         }
     }
 
@@ -163,42 +160,98 @@ struct FocusedPhraseView: View {
     }
 
     @ViewBuilder
-    private var translationBar: some View {
-        if viewModel.isLoadingTranslation {
-            // Loading state
-            Text("Translating...")
-                .font(.custom("Palatino", size: 14))
-                .foregroundColor(.black.opacity(0.4))
-                .italic()
-        } else if let translation = viewModel.focusedSentenceTranslation {
-            if translation.hasPrefix("Error:") {
-                // Error: show directly without spoiler
-                Text(translation)
-                    .font(.custom("Palatino", size: 14))
-                    .foregroundColor(.red.opacity(0.7))
-            } else if isTranslationRevealed {
-                // Revealed: show translation text
-                Text(translation)
-                    .font(.custom("Palatino", size: 14))
-                    .foregroundColor(.black.opacity(0.6))
-                    .onTapGesture {
-                        isTranslationRevealed = false
+    private var translationArea: some View {
+        VStack(spacing: 16) {
+            switch viewModel.translationState {
+            case .writing:
+                VStack(spacing: 4) {
+                    TextField("Write your translation...", text: $translationText)
+                        .font(.custom("Palatino", size: 24))
+                        .foregroundColor(.black)
+                        .textFieldStyle(.plain)
+                        .multilineTextAlignment(.center)
+                        .focused($isTextFieldFocused)
+                        .onSubmit {
+                            if !translationText.trimmingCharacters(in: .whitespaces).isEmpty {
+                                viewModel.submitTranslation(userText: translationText)
+                            }
+                        }
+
+                    Rectangle()
+                        .fill(Color.black.opacity(0.15))
+                        .frame(maxWidth: 480, maxHeight: 1)
+
+                    Text("Return to submit")
+                        .font(.custom("Palatino", size: 12))
+                        .foregroundColor(.black.opacity(0.15))
+                }
+
+            case .loading:
+                Text("Checking...")
+                    .font(.custom("Palatino", size: 24))
+                    .foregroundColor(.black.opacity(0.2))
+                    .italic()
+
+            case .reviewed:
+                if let feedback = viewModel.translationFeedback {
+                    VStack(spacing: 16) {
+                        // User's translation
+                        Text(translationText)
+                            .font(.custom("Palatino", size: 24))
+                            .foregroundColor(.black)
+                            .multilineTextAlignment(.center)
+
+                        // Rating
+                        Text(feedback.rating)
+                            .font(.custom("Palatino", size: 14).bold())
+                            .foregroundColor(ratingColor(feedback.rating))
+
+                        // Divider + reference
+                        VStack(spacing: 12) {
+                            Rectangle()
+                                .fill(Color.black.opacity(0.07))
+                                .frame(maxWidth: 480, maxHeight: 1)
+
+                            Text(feedback.referenceTranslation)
+                                .font(.custom("Palatino", size: 16))
+                                .foregroundColor(.black.opacity(0.4))
+                                .italic()
+                                .multilineTextAlignment(.center)
+
+                            // Notes
+                            if !feedback.notes.isEmpty {
+                                ForEach(feedback.notes, id: \.self) { note in
+                                    Text(note)
+                                        .font(.custom("Palatino", size: 13))
+                                        .foregroundColor(.black.opacity(0.25))
+                                        .multilineTextAlignment(.center)
+                                }
+                            }
+                        }
+
+                        // Try again
+                        Text("Try again")
+                            .font(.custom("Palatino", size: 13))
+                            .foregroundColor(.black.opacity(0.4))
+                            .underline()
+                            .onTapGesture {
+                                translationText = ""
+                                viewModel.retryTranslation()
+                            }
                     }
-            } else {
-                // Hidden: black spoiler bar
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.black)
-                    .frame(width: max(CGFloat(translation.count) * 7, 100), height: 20)
-                    .onTapGesture {
-                        isTranslationRevealed = true
-                    }
+                }
             }
-        } else {
-            // No translation available
-            Text("Translation unavailable")
-                .font(.custom("Palatino", size: 14))
-                .foregroundColor(.black.opacity(0.3))
-                .italic()
+        }
+        .frame(maxWidth: 720)
+    }
+
+    private func ratingColor(_ rating: String) -> Color {
+        switch rating {
+        case "excellent": return Color(red: 0, green: 0.6, blue: 0)
+        case "good": return .black
+        case "needs work": return Color(red: 0.8, green: 0, blue: 0)
+        case "error": return .red.opacity(0.7)
+        default: return .black
         }
     }
 
@@ -219,12 +272,24 @@ struct FocusedPhraseView: View {
         if word.isPolysemous && !discriminationResolved {
             // Inline discrimination: show options horizontally
             HStack(spacing: 8) {
-                Text(word.text)
-                    .font(.custom("Palatino", size: 16).bold())
-                    .foregroundColor(.black)
+                if let citation = word.dictionaryCitation {
+                    Text(citation)
+                        .font(.custom("Palatino", size: 16).bold())
+                        .foregroundColor(.black)
+                } else {
+                    Text(word.lemma ?? word.text)
+                        .font(.custom("Palatino", size: 16).bold())
+                        .foregroundColor(.black)
+                }
 
                 if let pos = word.expandedPos {
                     Text(pos)
+                        .font(.custom("Palatino", size: 13))
+                        .foregroundColor(.black.opacity(0.4))
+                }
+
+                if word.irregular {
+                    Text("irreg.")
                         .font(.custom("Palatino", size: 13))
                         .foregroundColor(.black.opacity(0.4))
                 }
@@ -233,8 +298,6 @@ struct FocusedPhraseView: View {
                     .foregroundColor(.black.opacity(0.3))
 
                 ForEach(Array(discriminationOptions.enumerated()), id: \.offset) { index, option in
-                    let isCorrect = option == (word.gloss ?? "")
-
                     HStack(spacing: 4) {
                         Text("\(index + 1)")
                             .font(.custom("Palatino", size: 12).bold())
@@ -262,10 +325,16 @@ struct FocusedPhraseView: View {
         } else {
             // Standard word info (also shown after discrimination resolves)
             HStack(spacing: 0) {
-                // Word
-                Text(word.text)
-                    .font(.custom("Palatino", size: 16))
-                    .foregroundColor(.black)
+                // Dictionary citation or lemma
+                if let citation = word.dictionaryCitation {
+                    Text(citation)
+                        .font(.custom("Palatino", size: 16))
+                        .foregroundColor(.black)
+                } else {
+                    Text(word.lemma ?? word.text)
+                        .font(.custom("Palatino", size: 16))
+                        .foregroundColor(.black)
+                }
 
                 // Part of speech
                 if let pos = word.expandedPos {
@@ -275,19 +344,20 @@ struct FocusedPhraseView: View {
                         .foregroundColor(.black.opacity(0.6))
                 }
 
-                // Lemma — gloss
-                if word.lemma != nil || word.gloss != nil {
+                // Irregular marker
+                if word.irregular {
                     Text(" · ")
                         .foregroundColor(.black.opacity(0.3))
-                    if let lemma = word.lemma {
-                        Text(lemma)
-                            .italic()
-                            .foregroundColor(.black)
-                    }
-                    if let gloss = word.gloss {
-                        Text(word.lemma != nil ? " — \(gloss)" : gloss)
-                            .foregroundColor(.black.opacity(0.6))
-                    }
+                    Text("irreg.")
+                        .foregroundColor(.black.opacity(0.6))
+                }
+
+                // Gloss
+                if let gloss = word.gloss {
+                    Text(" · ")
+                        .foregroundColor(.black.opacity(0.3))
+                    Text(gloss)
+                        .foregroundColor(.black.opacity(0.6))
                 }
 
                 // Form
