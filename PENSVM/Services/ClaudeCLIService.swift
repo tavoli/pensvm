@@ -7,6 +7,7 @@ enum ClaudeCLIError: LocalizedError {
     case executionError(String)
     case invalidResponse
     case parseError(String)
+    case apiKeyMissing
 
     var errorDescription: String? {
         switch self {
@@ -20,6 +21,8 @@ enum ClaudeCLIError: LocalizedError {
             return "Could not parse response."
         case .parseError(let message):
             return "Parse error: \(message)"
+        case .apiKeyMissing:
+            return "OPENROUTER_API_KEY environment variable is not set."
         }
     }
 }
@@ -462,6 +465,86 @@ class ClaudeCLIService {
         return try parseSentences(sentencesJson)
     }
 
+    // MARK: - Anthropic API
+
+    private static func loadAPIKey() -> String? {
+        // 1. Environment variable (Xcode scheme)
+        if let key = ProcessInfo.processInfo.environment["OPENROUTER_API_KEY"], !key.isEmpty {
+            return key
+        }
+        // 2. Config file: ~/Library/Application Support/PENSVM/config.json
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let configURL = appSupport.appendingPathComponent("PENSVM/config.json")
+        if let data = try? Data(contentsOf: configURL),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let key = json["openrouter_api_key"] as? String, !key.isEmpty {
+            return key
+        }
+        return nil
+    }
+
+    private func callAnthropicAPI(prompt: String, toolSchema: [String: Any]? = nil) async throws -> Any {
+        guard let apiKey = Self.loadAPIKey() else {
+            throw ClaudeCLIError.apiKeyMissing
+        }
+
+        let url = URL(string: "https://openrouter.ai/api/v1/messages")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.setValue("application/json", forHTTPHeaderField: "content-type")
+
+        var body: [String: Any] = [
+            "model": "anthropic/claude-haiku-4.5",
+            "max_tokens": 256,
+            "messages": [["role": "user", "content": prompt]]
+        ]
+
+        if let toolSchema = toolSchema {
+            body["tools"] = [[
+                "name": "respond",
+                "description": "Provide structured response",
+                "input_schema": toolSchema
+            ]]
+            body["tool_choice"] = ["type": "tool", "name": "respond"]
+        }
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw ClaudeCLIError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorBody = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw ClaudeCLIError.executionError("API error (\(httpResponse.statusCode)): \(errorBody)")
+        }
+
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let content = json["content"] as? [[String: Any]],
+              let first = content.first else {
+            throw ClaudeCLIError.invalidResponse
+        }
+
+        if toolSchema != nil {
+            // Extract tool_use input
+            guard first["type"] as? String == "tool_use",
+                  let input = first["input"] as? [String: Any] else {
+                throw ClaudeCLIError.parseError("Expected tool_use response")
+            }
+            return input
+        } else {
+            // Extract plain text
+            guard let text = first["text"] as? String else {
+                throw ClaudeCLIError.parseError("Expected text response")
+            }
+            return text
+        }
+    }
+
     // MARK: - Translation
 
     func translateSentence(_ latinText: String) async throws -> String {
@@ -472,11 +555,6 @@ class ClaudeCLIService {
             return "In Italy there are many villas."
         }
 
-        // Check if CLI exists
-        guard FileManager.default.fileExists(atPath: claudePath) else {
-            throw ClaudeCLIError.cliNotFound
-        }
-
         let prompt = """
         Translate this Latin sentence to English. Provide only the translation, nothing else.
         Be literal and exact. Do not add explanations or notes.
@@ -484,65 +562,13 @@ class ClaudeCLIService {
         Latin: \(latinText)
         """
 
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: claudePath)
-        process.arguments = [
-            "-p", prompt,
-            "--output-format", "json",
-            "--no-session-persistence"
-        ]
+        let result = try await callAnthropicAPI(prompt: prompt)
 
-        // Ensure Claude CLI and Node.js paths are in PATH
-        var env = ProcessInfo.processInfo.environment
-        let currentPath = env["PATH"] ?? "/usr/bin:/bin"
-        let nvmBin = nvmNodeBinPath
-        env["PATH"] = "\(NSHomeDirectory())/.local/bin:\(NSHomeDirectory())/.bun/bin:\(nvmBin):\(currentPath)"
-        process.environment = env
-
-        let outputPipe = Pipe()
-        let errorPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = errorPipe
-
-        do {
-            try process.run()
-        } catch {
-            throw ClaudeCLIError.executionError(error.localizedDescription)
-        }
-
-        process.waitUntilExit()
-
-        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-        let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-
-        print("🔧 Claude CLI path: \(claudePath)")
-        print("🔧 Exit status: \(process.terminationStatus)")
-
-        if process.terminationStatus != 0 {
-            let errorMessage = String(data: errorData, encoding: .utf8) ?? "Unknown error"
-            print("❌ CLI stderr: \(errorMessage)")
-            throw ClaudeCLIError.executionError(errorMessage)
-        }
-
-        guard let output = String(data: outputData, encoding: .utf8) else {
+        guard let text = result as? String else {
             throw ClaudeCLIError.invalidResponse
         }
 
-        print("📝 Translation response: \(output)")
-
-        // Parse JSON response to extract result
-        guard let data = output.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw ClaudeCLIError.parseError("Could not parse JSON response")
-        }
-
-        print("📦 JSON keys: \(json.keys)")
-
-        guard let result = json["result"] as? String else {
-            throw ClaudeCLIError.parseError("Missing 'result' field in response. Keys: \(json.keys)")
-        }
-
-        return result.trimmingCharacters(in: .whitespacesAndNewlines)
+        return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     // MARK: - Translation Review
@@ -571,10 +597,6 @@ class ClaudeCLIService {
             )
         }
 
-        guard FileManager.default.fileExists(atPath: claudePath) else {
-            throw ClaudeCLIError.cliNotFound
-        }
-
         let prompt = """
         You are evaluating an English translation of a Latin sentence.
 
@@ -588,65 +610,18 @@ class ClaudeCLIService {
         Provide a reference translation and 0-3 brief notes on specific issues or praise.
         """
 
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: claudePath)
-        process.arguments = [
-            "-p", prompt,
-            "--output-format", "json",
-            "--json-schema", reviewSchema,
-            "--no-session-persistence"
-        ]
-
-        var env = ProcessInfo.processInfo.environment
-        let currentPath = env["PATH"] ?? "/usr/bin:/bin"
-        let nvmBin = nvmNodeBinPath
-        env["PATH"] = "\(NSHomeDirectory())/.local/bin:\(NSHomeDirectory())/.bun/bin:\(nvmBin):\(currentPath)"
-        process.environment = env
-
-        let outputPipe = Pipe()
-        let errorPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = errorPipe
-
-        do {
-            try process.run()
-        } catch {
-            throw ClaudeCLIError.executionError(error.localizedDescription)
+        guard let schemaData = reviewSchema.data(using: .utf8),
+              let schema = try? JSONSerialization.jsonObject(with: schemaData) as? [String: Any] else {
+            throw ClaudeCLIError.parseError("Invalid review schema")
         }
 
-        process.waitUntilExit()
+        let result = try await callAnthropicAPI(prompt: prompt, toolSchema: schema)
 
-        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-        let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-
-        if process.terminationStatus != 0 {
-            let errorMessage = String(data: errorData, encoding: .utf8) ?? "Unknown error"
-            throw ClaudeCLIError.executionError(errorMessage)
-        }
-
-        guard let output = String(data: outputData, encoding: .utf8) else {
+        guard let feedbackJson = result as? [String: Any] else {
             throw ClaudeCLIError.invalidResponse
         }
 
-        // Parse JSON response
-        guard let data = output.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw ClaudeCLIError.parseError("Could not parse JSON response")
-        }
-
-        // Extract from structured_output (--json-schema mode)
-        if let structuredOutput = json["structured_output"] as? [String: Any] {
-            return try parseReviewFeedback(structuredOutput)
-        }
-
-        // Fallback: try result field
-        if let result = json["result"] as? String,
-           let resultData = result.data(using: .utf8),
-           let resultJson = try? JSONSerialization.jsonObject(with: resultData) as? [String: Any] {
-            return try parseReviewFeedback(resultJson)
-        }
-
-        throw ClaudeCLIError.parseError("Missing structured_output in review response")
+        return try parseReviewFeedback(feedbackJson)
     }
 
     private func parseReviewFeedback(_ json: [String: Any]) throws -> TranslationFeedback {

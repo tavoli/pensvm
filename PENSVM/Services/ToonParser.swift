@@ -120,25 +120,9 @@ struct ToonParser {
         )
     }
 
-    /// Parse a CSV line, handling commas and potential escaping
+    /// Parse a TOON CSV line — simple comma splitting (no quote escaping needed)
     private static func parseCSVLine(_ line: String) -> [String] {
-        var values: [String] = []
-        var current = ""
-        var inQuotes = false
-
-        for char in line {
-            if char == "\"" {
-                inQuotes.toggle()
-            } else if char == "," && !inQuotes {
-                values.append(current)
-                current = ""
-            } else {
-                current.append(char)
-            }
-        }
-        values.append(current)
-
-        return values
+        return line.components(separatedBy: ",")
     }
 
     // MARK: - Expansion (for display)

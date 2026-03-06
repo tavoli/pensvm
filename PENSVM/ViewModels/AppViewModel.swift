@@ -250,13 +250,19 @@ class AppViewModel: ObservableObject {
     }
 
     /// Clears reading popover and prepared sentence state. Returns true if something was cleared.
+    /// Dismisses popover first; only clears prepared sentence on a subsequent call.
     func clearReadingActiveState() -> Bool {
-        let hadState = readingSelectedWord != nil || readingPreparedSentenceId != nil
-        readingSelectedWord = nil
-        readingPreparedSentenceId = nil
-        readingPreparedSentenceWords = nil
-        readingPreparedSentenceIndex = nil
-        return hadState
+        if readingSelectedWord != nil {
+            readingSelectedWord = nil
+            return true
+        }
+        if readingPreparedSentenceId != nil {
+            readingPreparedSentenceId = nil
+            readingPreparedSentenceWords = nil
+            readingPreparedSentenceIndex = nil
+            return true
+        }
+        return false
     }
 
     func openPreparedSentence() {

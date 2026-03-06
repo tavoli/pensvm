@@ -60,8 +60,8 @@ struct FocusedPhraseView: View {
                     }
                 }
 
-                // Inline translation area
-                translationArea
+                // Inline translation card
+                translationCard
 
                 Spacer()
             }
@@ -127,9 +127,12 @@ struct FocusedPhraseView: View {
         .onChange(of: selectedWord?.id) { _ in
             resetDiscrimination()
         }
+        .onAppear {
+            isTextFieldFocused = true
+        }
         .onChange(of: viewModel.focusedSentence?.first?.id) { _ in
             translationText = ""
-            isTextFieldFocused = false
+            isTextFieldFocused = true
         }
     }
 
@@ -159,90 +162,134 @@ struct FocusedPhraseView: View {
             }
     }
 
+    // MARK: - v4 Translation Card
+
+    private var translationCard: some View {
+        VStack(spacing: 0) {
+            // Top zone: user input / loading / reviewed answer
+            topZone
+                .padding(.horizontal, 24)
+                .padding(.vertical, 20)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .background(ratingTintColor)
+
+            // Ghost divider
+            Rectangle()
+                .fill(Color.black.opacity(0.035))
+                .frame(height: 1)
+
+            // Bottom zone: reference + notes or empty placeholder
+            bottomZone
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
+                .frame(maxWidth: .infinity, minHeight: 48, alignment: .center)
+                .background(Color.black.opacity(0.02))
+                .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 4, bottomTrailingRadius: 4))
+        }
+        .frame(maxWidth: 520)
+    }
+
     @ViewBuilder
-    private var translationArea: some View {
-        VStack(spacing: 16) {
-            switch viewModel.translationState {
-            case .writing:
-                VStack(spacing: 4) {
-                    TextField("Write your translation...", text: $translationText)
-                        .font(.custom("Palatino", size: 24))
-                        .foregroundColor(.black)
-                        .textFieldStyle(.plain)
-                        .multilineTextAlignment(.center)
-                        .focused($isTextFieldFocused)
-                        .onSubmit {
-                            if !translationText.trimmingCharacters(in: .whitespaces).isEmpty {
-                                viewModel.submitTranslation(userText: translationText)
-                            }
-                        }
-
-                    Rectangle()
-                        .fill(Color.black.opacity(0.15))
-                        .frame(maxWidth: 480, maxHeight: 1)
-
-                    Text("Return to submit")
-                        .font(.custom("Palatino", size: 12))
-                        .foregroundColor(.black.opacity(0.15))
+    private var topZone: some View {
+        switch viewModel.translationState {
+        case .writing:
+            TextField("Write your translation...", text: $translationText, axis: .vertical)
+                .font(.custom("Palatino", size: 22))
+                .foregroundColor(.black)
+                .textFieldStyle(.plain)
+                .multilineTextAlignment(.center)
+                .lineLimit(1...5)
+                .focused($isTextFieldFocused)
+                .onSubmit {
+                    if !translationText.trimmingCharacters(in: .whitespaces).isEmpty {
+                        viewModel.submitTranslation(userText: translationText)
+                    }
                 }
 
-            case .loading:
-                Text("Checking...")
-                    .font(.custom("Palatino", size: 24))
-                    .foregroundColor(.black.opacity(0.2))
-                    .italic()
+        case .loading:
+            Text(translationText)
+                .font(.custom("Palatino", size: 22))
+                .foregroundColor(.black.opacity(0.4))
+                .multilineTextAlignment(.center)
 
-            case .reviewed:
-                if let feedback = viewModel.translationFeedback {
-                    VStack(spacing: 16) {
-                        // User's translation
-                        Text(translationText)
-                            .font(.custom("Palatino", size: 24))
-                            .foregroundColor(.black)
-                            .multilineTextAlignment(.center)
+        case .reviewed:
+            if let feedback = viewModel.translationFeedback {
+                VStack(spacing: 8) {
+                    Text(translationText)
+                        .font(.custom("Palatino", size: 22))
+                        .foregroundColor(.black)
+                        .multilineTextAlignment(.center)
 
-                        // Rating
-                        Text(feedback.rating)
-                            .font(.custom("Palatino", size: 14).bold())
-                            .foregroundColor(ratingColor(feedback.rating))
-
-                        // Divider + reference
-                        VStack(spacing: 12) {
-                            Rectangle()
-                                .fill(Color.black.opacity(0.07))
-                                .frame(maxWidth: 480, maxHeight: 1)
-
-                            Text(feedback.referenceTranslation)
-                                .font(.custom("Palatino", size: 16))
-                                .foregroundColor(.black.opacity(0.4))
-                                .italic()
-                                .multilineTextAlignment(.center)
-
-                            // Notes
-                            if !feedback.notes.isEmpty {
-                                ForEach(feedback.notes, id: \.self) { note in
-                                    Text(note)
-                                        .font(.custom("Palatino", size: 13))
-                                        .foregroundColor(.black.opacity(0.25))
-                                        .multilineTextAlignment(.center)
-                                }
-                            }
-                        }
-
-                        // Try again
-                        Text("Try again")
-                            .font(.custom("Palatino", size: 13))
-                            .foregroundColor(.black.opacity(0.4))
-                            .underline()
-                            .onTapGesture {
-                                translationText = ""
-                                viewModel.retryTranslation()
-                            }
-                    }
+                    Text(feedback.rating)
+                        .font(.custom("Palatino", size: 13).bold())
+                        .foregroundColor(ratingColor(feedback.rating))
                 }
             }
         }
-        .frame(maxWidth: 720)
+    }
+
+    @ViewBuilder
+    private var bottomZone: some View {
+        switch viewModel.translationState {
+        case .writing:
+            Text("Return \u{21B5} to submit")
+                .font(.custom("Palatino", size: 12))
+                .foregroundColor(.black.opacity(0.12))
+
+        case .loading:
+            Text("Checking...")
+                .font(.custom("Palatino", size: 12))
+                .foregroundColor(.black.opacity(0.12))
+
+        case .reviewed:
+            if let feedback = viewModel.translationFeedback, feedback.rating != "error" {
+                VStack(spacing: 10) {
+                    Text(feedback.referenceTranslation)
+                        .font(.custom("Palatino", size: 15).italic())
+                        .foregroundColor(.black.opacity(0.5))
+                        .multilineTextAlignment(.center)
+
+                    if !feedback.notes.isEmpty {
+                        ForEach(feedback.notes, id: \.self) { note in
+                            Text("— \(note)")
+                                .font(.custom("Palatino", size: 13))
+                                .foregroundColor(.black.opacity(0.35))
+                                .multilineTextAlignment(.center)
+                        }
+                    }
+
+                    Text("Try again")
+                        .font(.custom("Palatino", size: 12))
+                        .foregroundColor(.black.opacity(0.35))
+                        .underline()
+                        .onTapGesture {
+                            translationText = ""
+                            viewModel.retryTranslation()
+                        }
+                }
+            } else {
+                Text("Try again")
+                    .font(.custom("Palatino", size: 12))
+                    .foregroundColor(.black.opacity(0.35))
+                    .underline()
+                    .onTapGesture {
+                        translationText = ""
+                        viewModel.retryTranslation()
+                    }
+            }
+        }
+    }
+
+    private var ratingTintColor: Color {
+        guard case .reviewed = viewModel.translationState,
+              let feedback = viewModel.translationFeedback else {
+            return .clear
+        }
+        switch feedback.rating {
+        case "excellent": return Color(red: 0, green: 0.6, blue: 0).opacity(0.04)
+        case "needs work": return Color(red: 0.8, green: 0, blue: 0).opacity(0.04)
+        default: return .clear
+        }
     }
 
     private func ratingColor(_ rating: String) -> Color {

@@ -13,6 +13,7 @@ struct PageContentView: View {
 
     @EnvironmentObject var viewModel: AppViewModel
     @State private var hoverTimer: Timer?
+    @State private var unprepareTimer: Timer?
     @State private var cachedSentences: [UUID: [ReadingSentence]] = [:]  // block.id -> sentences
     @State private var currentlyHoveredSentence: ReadingSentence?  // Track current hover for restart
 
@@ -147,6 +148,10 @@ struct PageContentView: View {
                     .padding(.leading, textIndent(for: block))
                     .padding(.top, topPadding(for: block))
                     .padding(.vertical, isGrammarStyle(block.style) ? 2 : 0)
+                    .drawingGroup()
+                    .blur(radius: preparedSentenceId != nil ? 4 : 0)
+                    .opacity(preparedSentenceId != nil ? 0.5 : 1)
+                    .animation(.easeInOut(duration: 0.35), value: preparedSentenceId)
             }
         case .image:
             if let assetPath = block.assetPath {
@@ -293,12 +298,26 @@ struct PageContentView: View {
 
     private func handleSentenceHover(isHovering: Bool, sentence: ReadingSentence) {
         if isHovering {
+            // Mouse entered a word — cancel any pending unprepare
+            unprepareTimer?.invalidate()
+            unprepareTimer = nil
             currentlyHoveredSentence = sentence
             startHoverTimer(for: sentence)
         } else {
             currentlyHoveredSentence = nil
             hoverTimer?.invalidate()
             hoverTimer = nil
+            // If leaving a word of the prepared sentence, start short unprepare timer
+            if preparedSentenceId == sentence.id {
+                unprepareTimer?.invalidate()
+                unprepareTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: false) { _ in
+                    DispatchQueue.main.async {
+                        viewModel.readingPreparedSentenceId = nil
+                        viewModel.readingPreparedSentenceWords = nil
+                        viewModel.readingPreparedSentenceIndex = nil
+                    }
+                }
+            }
         }
     }
 
@@ -329,25 +348,58 @@ struct PageContentView: View {
             // Grammar prose: each sentence on its own line
             VStack(alignment: .leading, spacing: 2) {
                 ForEach(sentences) { sentence in
+                    let isBlurred = preparedSentenceId != nil && preparedSentenceId != sentence.id
                     WrappingHStack(alignment: .leading, spacing: 0) {
                         ForEach(sentence.words) { word in
                             wordView(word, sentence: sentence, block: block)
                         }
                     }
+                    .opacity(isBlurred ? 0.01 : 1)
+                    .background {
+                        WrappingHStack(alignment: .leading, spacing: 0) {
+                            ForEach(sentence.words) { word in
+                                plainWordText(word, block: block)
+                            }
+                        }
+                        .drawingGroup()
+                        .blur(radius: 4)
+                        .opacity(isBlurred ? 0.5 : 0)
+                    }
+                    .animation(.easeInOut(duration: 0.35), value: isBlurred)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, textIndent(for: block))
             .padding(.vertical, 2)
         } else {
-            // Regular text: all sentences flow together
+            // Regular text: two-layer approach.
+            // Both layers use identical WrappingHStack → same word positions.
+            // Foreground: 0.01 opacity for non-prepared (keeps hover alive).
+            // Background: pre-blurred, fades in/out via opacity.
+            let hasPrepared = preparedSentenceId != nil
+
             WrappingHStack(alignment: .leading, spacing: 0, lineSpacing: 6) {
                 ForEach(sentences) { sentence in
                     ForEach(sentence.words) { word in
                         wordView(word, sentence: sentence, block: block)
+                            .opacity(!hasPrepared || sentence.id == preparedSentenceId ? 1 : 0.01)
                     }
                 }
             }
+            .background {
+                WrappingHStack(alignment: .leading, spacing: 0, lineSpacing: 6) {
+                    ForEach(sentences) { sentence in
+                        ForEach(sentence.words) { word in
+                            plainWordText(word, block: block)
+                                .opacity(sentence.id == preparedSentenceId ? 0 : 1)
+                        }
+                    }
+                }
+                .drawingGroup()
+                .blur(radius: 4)
+                .opacity(hasPrepared ? 0.5 : 0)
+            }
+            .animation(.easeInOut(duration: 0.35), value: preparedSentenceId)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, textIndent(for: block))
             .padding(.vertical, isGrammarStyle(block.style) ? 2 : 0)
@@ -387,6 +439,16 @@ struct PageContentView: View {
                     selectedWord = word
                 }
             }
+    }
+
+    @ViewBuilder
+    private func plainWordText(_ word: AnnotatedWord, block: ContentBlock) -> some View {
+        let isPunctuation = !word.hasAnnotations && word.text.count <= 2
+        let displayText = isPunctuation ? word.text : " " + word.text
+        Text(displayText)
+            .font(.custom("Palatino", size: textSize(for: block)).weight(isBold(for: block) ? .bold : .regular))
+            .italic(isItalic(for: block))
+            .foregroundColor(textColor(for: block))
     }
 
     private static func caseColor(for label: String) -> Color {
@@ -696,12 +758,12 @@ struct WrappingHStack: Layout {
     var lineSpacing: CGFloat = 0
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let result = FlowResult(in: proposal.width ?? 0, subviews: subviews, spacing: spacing, lineSpacing: lineSpacing)
+        let result = FlowResult(in: proposal.width ?? 0, subviews: subviews, spacing: spacing, lineSpacing: lineSpacing, alignment: alignment)
         return result.size
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let result = FlowResult(in: bounds.width, subviews: subviews, spacing: spacing, lineSpacing: lineSpacing)
+        let result = FlowResult(in: bounds.width, subviews: subviews, spacing: spacing, lineSpacing: lineSpacing, alignment: alignment)
 
         for (index, subview) in subviews.enumerated() {
             let point = result.positions[index]
@@ -713,16 +775,22 @@ struct WrappingHStack: Layout {
         var size: CGSize = .zero
         var positions: [CGPoint] = []
 
-        init(in containerWidth: CGFloat, subviews: Subviews, spacing: CGFloat, lineSpacing: CGFloat = 0) {
+        init(in containerWidth: CGFloat, subviews: Subviews, spacing: CGFloat, lineSpacing: CGFloat = 0, alignment: HorizontalAlignment = .leading) {
             var x: CGFloat = 0
             var y: CGFloat = 0
             var lineHeight: CGFloat = 0
+            var lineStart = 0
 
-            for subview in subviews {
+            // Track line boundaries for alignment pass
+            var lines: [(start: Int, end: Int, width: CGFloat)] = []
+
+            // First pass: compute positions left-aligned
+            for (index, subview) in subviews.enumerated() {
                 let size = subview.sizeThatFits(.unspecified)
 
-                // Check if we need to wrap to next line
                 if x + size.width > containerWidth && x > 0 {
+                    lines.append((start: lineStart, end: index - 1, width: x))
+                    lineStart = index
                     x = 0
                     y += lineHeight + (lineSpacing > 0 ? lineSpacing : spacing)
                     lineHeight = 0
@@ -731,6 +799,28 @@ struct WrappingHStack: Layout {
                 positions.append(CGPoint(x: x, y: y))
                 lineHeight = max(lineHeight, size.height)
                 x += size.width
+            }
+
+            // Record final line
+            if !subviews.isEmpty {
+                lines.append((start: lineStart, end: subviews.count - 1, width: x))
+            }
+
+            // Second pass: apply alignment offset per line
+            if alignment != .leading {
+                for line in lines {
+                    let offset: CGFloat
+                    switch alignment {
+                    case .center: offset = (containerWidth - line.width) / 2
+                    case .trailing: offset = containerWidth - line.width
+                    default: offset = 0
+                    }
+                    if offset > 0 {
+                        for i in line.start...line.end {
+                            positions[i].x += offset
+                        }
+                    }
+                }
             }
 
             self.size = CGSize(width: containerWidth, height: y + lineHeight)
