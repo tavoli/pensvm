@@ -37,6 +37,7 @@
 		DD000009DDDD0009DDDD0009 /* SessionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000009EEEE0009EEEE0009 /* SessionState.swift */; };
 		DD00000ADDDD000ADDDD000A /* SessionStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000AEEEE000AEEEE000A /* SessionStorageService.swift */; };
 		DD00000CDDDD000CDDDD000C /* GrammarTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000CEEEE000CEEEE000C /* GrammarTableView.swift */; };
+		DD00000DDDDD000DDDDD000D /* BookLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000DEEEE000DEEEE000D /* BookLibraryView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -72,6 +73,7 @@
 		EE000009EEEE0009EEEE0009 /* SessionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionState.swift; sourceTree = "<group>"; };
 		EE00000AEEEE000AEEEE000A /* SessionStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStorageService.swift; sourceTree = "<group>"; };
 		EE00000CEEEE000CEEEE000C /* GrammarTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrammarTableView.swift; sourceTree = "<group>"; };
+		EE00000DEEEE000DEEEE000D /* BookLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookLibraryView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -131,6 +133,7 @@
 		E72BE337B8D953B351BD0131 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				EE00000DEEEE000DEEEE000D /* BookLibraryView.swift */,
 				EE000002EEEE0002EEEE0002 /* ChapterLibraryView.swift */,
 				EE000003EEEE0003EEEE0003 /* ChapterDetailView.swift */,
 				BB000001BBBB0001BBBB0001 /* ExerciseLibraryView.swift */,
@@ -284,6 +287,7 @@
 				DD000009DDDD0009DDDD0009 /* SessionState.swift in Sources */,
 				DD00000ADDDD000ADDDD000A /* SessionStorageService.swift in Sources */,
 				DD00000CDDDD000CDDDD000C /* GrammarTableView.swift in Sources */,
+				DD00000DDDDD000DDDDD000D /* BookLibraryView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

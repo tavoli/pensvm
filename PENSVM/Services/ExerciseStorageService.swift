@@ -1,7 +1,7 @@
 import Foundation
 
 /// Manages exercise JSON storage and the exercise library index
-/// Exercises are stored under their chapter directory: chapters/ch-{NN}/exercises/ex-{II}/
+/// Exercises are stored under their chapter directory: books/<slug>/chapters/ch-{NN}/exercises/ex-{II}/
 class ExerciseStorageService {
     static let shared = ExerciseStorageService()
 
@@ -15,9 +15,9 @@ class ExerciseStorageService {
         return appSupport.appendingPathComponent("PENSVM")
     }
 
-    /// Chapters directory: ~/Library/Application Support/PENSVM/chapters/
+    /// Chapters directory for LLPSI (default book)
     var chaptersDirectory: URL {
-        baseDirectory.appendingPathComponent("chapters")
+        ChapterStorageService.shared.chaptersDirectory
     }
 
     /// Library index file: ~/Library/Application Support/PENSVM/exercise-library.json

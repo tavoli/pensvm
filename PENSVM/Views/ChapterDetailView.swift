@@ -33,17 +33,19 @@ struct ChapterDetailView: View {
                     }
                     .buttonStyle(MinimalButtonStyle())
 
-                    Button(action: { viewModel.goToExercises() }) {
-                        VStack(spacing: 8) {
-                            Text("EXERCISES")
-                                .font(.custom("Palatino", size: 18))
-                            Text("[E]")
-                                .font(.custom("Palatino", size: 12))
-                                .foregroundColor(.black.opacity(0.4))
+                    if viewModel.selectedBook?.hasExercises != false {
+                        Button(action: { viewModel.goToExercises() }) {
+                            VStack(spacing: 8) {
+                                Text("EXERCISES")
+                                    .font(.custom("Palatino", size: 18))
+                                Text("[E]")
+                                    .font(.custom("Palatino", size: 12))
+                                    .foregroundColor(.black.opacity(0.4))
+                            }
+                            .frame(width: 120, height: 80)
                         }
-                        .frame(width: 120, height: 80)
+                        .buttonStyle(MinimalButtonStyle())
                     }
-                    .buttonStyle(MinimalButtonStyle())
                 }
             } else {
                 Text("No chapter selected")
@@ -67,8 +69,11 @@ struct ChapterDetailView: View {
             return .handled
         }
         .onKeyPress(characters: CharacterSet(charactersIn: "eE")) { _ in
-            viewModel.goToExercises()
-            return .handled
+            if viewModel.selectedBook?.hasExercises != false {
+                viewModel.goToExercises()
+                return .handled
+            }
+            return .ignored
         }
     }
 

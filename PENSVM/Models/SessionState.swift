@@ -5,6 +5,9 @@ struct SessionState: Codable {
     // Current view state
     var stateType: String  // "home", "chapterLibrary", "chapterDetail", "reading", "exerciseLibrary", "exercise", "summary"
 
+    // Book context
+    var selectedBookSlug: String?
+
     // Chapter context
     var selectedChapterNumber: Int?
     var currentPageIndex: Int?

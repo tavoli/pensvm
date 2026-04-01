@@ -9,6 +9,9 @@ class AppViewModel: ObservableObject {
     @Published var translationState: TranslationCompositionState = .writing
     @Published var translationFeedback: TranslationFeedback?
 
+    // MARK: - Book State
+    @Published var selectedBook: BookLibraryEntry?
+
     // MARK: - Chapter State
     @Published var selectedChapter: Chapter?
     @Published var currentPageIndex: Int = 0
@@ -72,10 +75,20 @@ class AppViewModel: ObservableObject {
 
     func goHome() {
         state = .home
+        selectedBook = nil
         selectedChapter = nil
         currentPageIndex = 0
         resetExercise()
         sessionStorage.clearSession()
+    }
+
+    func goToBookLibrary() {
+        state = .bookLibrary
+    }
+
+    func selectBook(_ book: BookLibraryEntry) {
+        selectedBook = book
+        state = .chapterLibrary
     }
 
     func goToChapterLibrary() {
@@ -105,6 +118,12 @@ class AppViewModel: ObservableObject {
     func backToChapterLibrary() {
         selectedChapter = nil
         state = .chapterLibrary
+    }
+
+    func backToBookLibrary() {
+        selectedBook = nil
+        selectedChapter = nil
+        state = .bookLibrary
     }
 
     // MARK: - Reading Navigation
@@ -343,6 +362,7 @@ class AppViewModel: ObservableObject {
         let stateType: String
         switch state {
         case .home: stateType = "home"
+        case .bookLibrary: stateType = "bookLibrary"
         case .chapterLibrary: stateType = "chapterLibrary"
         case .chapterDetail: stateType = "chapterDetail"
         case .reading: stateType = "reading"
@@ -417,6 +437,8 @@ class AppViewModel: ObservableObject {
         switch session.stateType {
         case "home":
             state = .home
+        case "bookLibrary":
+            state = .bookLibrary
         case "chapterLibrary":
             state = .chapterLibrary
         case "chapterDetail":

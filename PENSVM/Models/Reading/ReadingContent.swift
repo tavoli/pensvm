@@ -3,6 +3,54 @@ import Foundation
 // MARK: - Library Index
 
 struct LibraryIndex: Codable {
+    var books: [BookLibraryEntry]
+
+    /// Legacy support: decode old format with chapters at root
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let books = try? container.decode([BookLibraryEntry].self, forKey: .books) {
+            self.books = books
+        } else if let chapters = try? container.decode([ChapterRef].self, forKey: .chapters) {
+            // Migrate old format: wrap chapters into default LLPSI book
+            self.books = [BookLibraryEntry(
+                slug: "llpsi",
+                title: "Lingua Latina per se Illustrata",
+                author: "Hans Ørberg",
+                hasExercises: true,
+                hasMarginImages: true,
+                chapters: chapters
+            )]
+        } else {
+            self.books = []
+        }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case books, chapters
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(books, forKey: .books)
+    }
+
+    init(books: [BookLibraryEntry]) {
+        self.books = books
+    }
+
+    /// Convenience: find a book by slug
+    func book(slug: String) -> BookLibraryEntry? {
+        books.first { $0.slug == slug }
+    }
+}
+
+struct BookLibraryEntry: Codable, Identifiable {
+    var id: String { slug }
+    let slug: String
+    let title: String
+    let author: String?
+    let hasExercises: Bool
+    let hasMarginImages: Bool
     var chapters: [ChapterRef]
 }
 

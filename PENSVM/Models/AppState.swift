@@ -2,7 +2,8 @@ import Foundation
 
 enum AppState: Equatable {
     case home              // Landing screen
-    case chapterLibrary    // List of all chapters
+    case bookLibrary       // List of all books
+    case chapterLibrary    // List of all chapters (scoped to selected book)
     case chapterDetail     // Single chapter with Read/Exercises options
     case reading           // Display chapter pages
     case exerciseLibrary   // List exercises (filtered by chapter when selected)
@@ -14,6 +15,7 @@ enum AppState: Equatable {
     static func == (lhs: AppState, rhs: AppState) -> Bool {
         switch (lhs, rhs) {
         case (.home, .home),
+             (.bookLibrary, .bookLibrary),
              (.chapterLibrary, .chapterLibrary),
              (.chapterDetail, .chapterDetail),
              (.reading, .reading),

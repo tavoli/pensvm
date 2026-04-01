@@ -6,6 +6,9 @@ struct PENSVMApp: App {
     @StateObject private var viewModel = AppViewModel()
 
     init() {
+        // Migrate legacy chapter storage to book-scoped layout
+        try? ChapterStorageService.shared.migrateIfNeeded()
+
         // Start the persistent Claude CLI service
         ClaudeCLIService.shared.startPersistentService()
 

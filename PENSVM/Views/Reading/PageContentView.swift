@@ -148,10 +148,6 @@ struct PageContentView: View {
                     .padding(.leading, textIndent(for: block))
                     .padding(.top, topPadding(for: block))
                     .padding(.vertical, isGrammarStyle(block.style) ? 2 : 0)
-                    .drawingGroup()
-                    .blur(radius: preparedSentenceId != nil ? 4 : 0)
-                    .opacity(preparedSentenceId != nil ? 0.5 : 1)
-                    .animation(.easeInOut(duration: 0.35), value: preparedSentenceId)
             }
         case .image:
             if let assetPath = block.assetPath {
@@ -348,58 +344,25 @@ struct PageContentView: View {
             // Grammar prose: each sentence on its own line
             VStack(alignment: .leading, spacing: 2) {
                 ForEach(sentences) { sentence in
-                    let isBlurred = preparedSentenceId != nil && preparedSentenceId != sentence.id
                     WrappingHStack(alignment: .leading, spacing: 0) {
                         ForEach(sentence.words) { word in
                             wordView(word, sentence: sentence, block: block)
                         }
                     }
-                    .opacity(isBlurred ? 0.01 : 1)
-                    .background {
-                        WrappingHStack(alignment: .leading, spacing: 0) {
-                            ForEach(sentence.words) { word in
-                                plainWordText(word, block: block)
-                            }
-                        }
-                        .drawingGroup()
-                        .blur(radius: 4)
-                        .opacity(isBlurred ? 0.5 : 0)
-                    }
-                    .animation(.easeInOut(duration: 0.35), value: isBlurred)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, textIndent(for: block))
             .padding(.vertical, 2)
         } else {
-            // Regular text: two-layer approach.
-            // Both layers use identical WrappingHStack → same word positions.
-            // Foreground: 0.01 opacity for non-prepared (keeps hover alive).
-            // Background: pre-blurred, fades in/out via opacity.
-            let hasPrepared = preparedSentenceId != nil
-
+            // Regular text: flat flow layout
             WrappingHStack(alignment: .leading, spacing: 0, lineSpacing: 6) {
                 ForEach(sentences) { sentence in
                     ForEach(sentence.words) { word in
                         wordView(word, sentence: sentence, block: block)
-                            .opacity(!hasPrepared || sentence.id == preparedSentenceId ? 1 : 0.01)
                     }
                 }
             }
-            .background {
-                WrappingHStack(alignment: .leading, spacing: 0, lineSpacing: 6) {
-                    ForEach(sentences) { sentence in
-                        ForEach(sentence.words) { word in
-                            plainWordText(word, block: block)
-                                .opacity(sentence.id == preparedSentenceId ? 0 : 1)
-                        }
-                    }
-                }
-                .drawingGroup()
-                .blur(radius: 4)
-                .opacity(hasPrepared ? 0.5 : 0)
-            }
-            .animation(.easeInOut(duration: 0.35), value: preparedSentenceId)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, textIndent(for: block))
             .padding(.vertical, isGrammarStyle(block.style) ? 2 : 0)

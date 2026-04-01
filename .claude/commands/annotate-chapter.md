@@ -5,19 +5,29 @@ Add word-level grammatical annotations to a chapter using TOON format.
 ## Usage
 
 ```
-/annotate-chapter <chapter-id>
+/annotate-chapter [--book <slug>] <chapter-id>
+```
+
+**Examples:**
+```
+/annotate-chapter ch-06
+/annotate-chapter --book fabulae-faciles ch-01
 ```
 
 ## Arguments
 
+- `--book <slug>` - (Optional) Book slug (default: "llpsi"). LLPSI chapters are at `chapters/`, other books at `books/<slug>/chapters/`.
 - `$ARGUMENTS` - Chapter ID (e.g., `ch-06`)
 
 ## Instructions
 
 ### 1. Load Chapter
 
-- Verify chapter exists at: `~/Library/Application Support/PENSVM/chapters/{chapter-id}/chapter.json`
-- Read and parse the JSON
+- Parse arguments: if first arg is `--book`, second arg is the book slug, remaining is the chapter ID. Otherwise all args are the chapter ID.
+- Determine the chapter path based on book slug:
+  - For "llpsi" (default): `~/Library/Application Support/PENSVM/chapters/{chapter-id}/chapter.json`
+  - For other books: `~/Library/Application Support/PENSVM/books/<book-slug>/chapters/{chapter-id}/chapter.json`
+- Verify chapter exists and read/parse the JSON
 
 ### 2. Process Text Blocks
 

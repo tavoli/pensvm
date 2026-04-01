@@ -138,9 +138,12 @@ struct ReadingView: View {
         // Check if content has column assignments (two-column layout)
         let hasColumnAssignments = page.content.contains { $0.column != nil }
 
-        if hasColumnAssignments || hasBothMargins {
-            // Two-column book spread layout
-            twoColumnLayout(page: page, geometry: geometry, hasLeftMargin: hasLeftMargin, hasRightMargin: hasRightMargin, hasBothMargins: hasBothMargins)
+        // For read-only books (no margin images), force cosmetic empty margins
+        let forceEmptyMargins = viewModel.selectedBook?.hasMarginImages == false
+
+        if hasColumnAssignments || hasBothMargins || forceEmptyMargins {
+            // Two-column book spread layout (with real or cosmetic empty margins)
+            twoColumnLayout(page: page, geometry: geometry, hasLeftMargin: hasLeftMargin || forceEmptyMargins, hasRightMargin: hasRightMargin || forceEmptyMargins, hasBothMargins: hasBothMargins || forceEmptyMargins)
         } else if hasAnyMargin {
             // Single-column with margin (legacy layout)
             singleColumnWithMarginLayout(page: page, geometry: geometry, hasLeftMargin: hasLeftMargin)

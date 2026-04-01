@@ -64,6 +64,8 @@ struct ContentView: View {
                 switch viewModel.state {
                 case .home:
                     HomeView()
+                case .bookLibrary:
+                    BookLibraryView()
                 case .chapterLibrary:
                     ChapterLibraryView()
                 case .chapterDetail:
@@ -153,8 +155,10 @@ struct ContentView: View {
 
     private func handleBack() {
         switch viewModel.state {
-        case .chapterLibrary:
+        case .bookLibrary:
             viewModel.goHome()
+        case .chapterLibrary:
+            viewModel.backToBookLibrary()
         case .chapterDetail:
             viewModel.backToChapterLibrary()
         case .reading:

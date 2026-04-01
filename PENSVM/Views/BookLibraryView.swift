@@ -1,8 +1,8 @@
 import SwiftUI
 
-struct ChapterLibraryView: View {
+struct BookLibraryView: View {
     @EnvironmentObject var viewModel: AppViewModel
-    @State private var chapters: [Chapter] = []
+    @State private var books: [BookLibraryEntry] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
 
@@ -12,21 +12,21 @@ struct ChapterLibraryView: View {
                 loadingView
             } else if let error = errorMessage {
                 errorView(error)
-            } else if chapters.isEmpty {
+            } else if books.isEmpty {
                 emptyView
             } else {
-                chapterList
+                bookList
             }
         }
         .onAppear {
-            loadChapters()
+            loadBooks()
         }
     }
 
     private var loadingView: some View {
         VStack {
             Spacer()
-            Text("Loading chapters...")
+            Text("Loading books...")
                 .font(.custom("Palatino", size: 18))
                 .foregroundColor(.black)
             Spacer()
@@ -40,7 +40,7 @@ struct ChapterLibraryView: View {
                 .font(.custom("Palatino", size: 18))
                 .foregroundColor(.black)
             Button("Retry") {
-                loadChapters()
+                loadBooks()
             }
             .buttonStyle(MinimalButtonStyle())
             Spacer()
@@ -50,7 +50,7 @@ struct ChapterLibraryView: View {
     private var emptyView: some View {
         VStack(spacing: 16) {
             Spacer()
-            Text("No chapters imported")
+            Text("No books imported")
                 .font(.custom("Palatino", size: 22))
                 .foregroundColor(.black)
             Text("Use /import-chapter to add chapters")
@@ -60,12 +60,12 @@ struct ChapterLibraryView: View {
         }
     }
 
-    private var chapterList: some View {
+    private var bookList: some View {
         ScrollView {
             VStack(spacing: 0) {
-                ForEach(chapters) { chapter in
-                    ChapterRow(chapter: chapter) {
-                        viewModel.selectChapter(chapter)
+                ForEach(books) { book in
+                    BookRow(book: book) {
+                        viewModel.selectBook(book)
                     }
                 }
             }
@@ -73,13 +73,12 @@ struct ChapterLibraryView: View {
         }
     }
 
-    private func loadChapters() {
+    private func loadBooks() {
         isLoading = true
         errorMessage = nil
 
         do {
-            let bookSlug = viewModel.selectedBook?.slug ?? ChapterStorageService.defaultBookSlug
-            chapters = try ChapterStorageService.shared.loadAllChapters(bookSlug: bookSlug)
+            books = try ChapterStorageService.shared.loadBooks()
             isLoading = false
         } catch {
             errorMessage = error.localizedDescription
@@ -88,20 +87,27 @@ struct ChapterLibraryView: View {
     }
 }
 
-struct ChapterRow: View {
-    let chapter: Chapter
+struct BookRow: View {
+    let book: BookLibraryEntry
     let onTap: () -> Void
 
     var body: some View {
         Button(action: onTap) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("\(chapter.romanNumeral). \(chapter.title)")
+                    Text(book.title)
                         .font(.custom("Palatino", size: 18))
                         .foregroundColor(.black)
-                    Text("\(chapter.totalPages) pages")
-                        .font(.custom("Palatino", size: 14))
-                        .foregroundColor(.black.opacity(0.6))
+                    HStack(spacing: 8) {
+                        if let author = book.author {
+                            Text(author)
+                                .font(.custom("Palatino", size: 14))
+                                .foregroundColor(.black.opacity(0.6))
+                        }
+                        Text("\(book.chapters.count) chapter\(book.chapters.count == 1 ? "" : "s")")
+                            .font(.custom("Palatino", size: 14))
+                            .foregroundColor(.black.opacity(0.4))
+                    }
                 }
                 Spacer()
             }

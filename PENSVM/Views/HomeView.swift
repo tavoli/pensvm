@@ -12,14 +12,14 @@ struct HomeView: View {
                 .font(.custom("Palatino", size: 48))
                 .foregroundColor(.black)
 
-            Text("Latin exercises from Lingua Latina")
+            Text("Latin reading & exercises")
                 .font(.custom("Palatino", size: 18))
                 .foregroundColor(.black.opacity(0.6))
 
             Spacer()
 
             Button("Enter Library") {
-                viewModel.goToChapterLibrary()
+                viewModel.goToBookLibrary()
             }
             .buttonStyle(MinimalButtonStyle())
             .font(.custom("Palatino", size: 18))
@@ -37,7 +37,7 @@ struct HomeView: View {
         .focusEffectDisabled()
         .onAppear { isFocused = true }
         .onKeyPress(.return) {
-            viewModel.goToChapterLibrary()
+            viewModel.goToBookLibrary()
             return .handled
         }
     }
