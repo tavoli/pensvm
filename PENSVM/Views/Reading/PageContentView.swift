@@ -175,6 +175,8 @@ struct PageContentView: View {
             return 22
         case "grammar-subtitle", "grammar", "grammar-label":
             return 18
+        case "margin-note":
+            return 14
         default:
             return 20
         }
@@ -186,6 +188,9 @@ struct PageContentView: View {
             return Color(red: 0.8, green: 0.4, blue: 0)  // Orange #CC6600
         case "grammar":
             return .black.opacity(0.8)
+        case "margin-note":
+            // Printed in the outer margin; kept subordinate to the verse it annotates
+            return .black.opacity(0.55)
         default:
             return .black
         }
@@ -200,6 +205,8 @@ struct PageContentView: View {
         switch block.style {
         case "grammar", "grammar-label":
             return 16
+        case "margin-note":
+            return 32
         default:
             return 0
         }

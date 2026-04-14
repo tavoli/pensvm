@@ -39,14 +39,16 @@ struct ExerciseView: View {
                 alignment: .top
             )
         }
-        .focusable(viewModel.isChecked)
+        .focusable()
         .focusEffectDisabled()
         .focused($isViewFocused)
         .onAppear {
             // Delay focus to ensure view hierarchy is ready (especially on session restore)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 if !viewModel.isChecked {
                     focusedGapIndex = 0
+                } else {
+                    isViewFocused = true
                 }
             }
         }
@@ -82,6 +84,14 @@ struct ExerciseView: View {
         }
         .onKeyPress(.return) {
             viewModel.handleEnter()
+            // Ensure view keeps focus after check/advance
+            DispatchQueue.main.async {
+                if viewModel.isChecked {
+                    isViewFocused = true
+                } else {
+                    focusedGapIndex = 0
+                }
+            }
             return .handled
         }
     }

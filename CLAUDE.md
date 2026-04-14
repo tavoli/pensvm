@@ -90,10 +90,7 @@ Expected response format (via `structured_output`):
 
 | Command | File | Purpose |
 |---------|------|---------|
-| `/import` | `import.md` | Smart router — auto-classifies images as chapter or exercise, splits mixed spreads (grammar left + exercise right), routes accordingly |
-| `/import-chapter` | `import-chapter.md` | Imports LLPSI reading pages including GRAMMATICA LATINA sections. Detects grammar via headers, `[A]`/`[B]`/`[C]` markers, declension/conjugation patterns. Applies styles: `grammar-title`, `grammar-subtitle`, `grammar`, `italic` |
-| `/import-exercise` | `import-exercise.md` | Imports PENSVM exercise images (A, B, C). Requires `--chapter N`. Extracts gaps and generates explanations |
-| `/annotate-chapter` | `annotate-chapter.md` | Adds TOON word-level annotations (lemma, gloss, form, part-of-speech) to chapter content including grammar blocks |
+| `/import` | `import.md` | All-in-one: classifies images → imports chapters (with grammar) → imports exercises → adds TOON annotations. Handles mixed spreads, margin extraction, and everything in a single pass |
 | `/release` | `release.md` | Builds Release version and installs to /Applications |
 
 ## Chapter Data Storage
@@ -112,9 +109,7 @@ Content blocks in `chapter.json` have:
 
 ### Grammar Import Pipeline
 
-1. `/import` or `/import-chapter` extracts grammar content with proper styles (`grammar-title`, `grammar-subtitle`, `grammar`)
-2. `/annotate-chapter` adds TOON annotations to all text blocks including grammar sections
-3. Both steps are required — missing either results in grammar sections without styles or without annotations
+`/import` handles the full pipeline in one pass: extracts grammar content with proper styles (`grammar-title`, `grammar-subtitle`, `grammar`), then adds TOON annotations to all text blocks including grammar sections.
 
 ## Key Behaviors
 

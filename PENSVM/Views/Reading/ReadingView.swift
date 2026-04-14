@@ -138,12 +138,14 @@ struct ReadingView: View {
         // Check if content has column assignments (two-column layout)
         let hasColumnAssignments = page.content.contains { $0.column != nil }
 
-        // For read-only books (no margin images), force cosmetic empty margins
-        let forceEmptyMargins = viewModel.selectedBook?.hasMarginImages == false
-
-        if hasColumnAssignments || hasBothMargins || forceEmptyMargins {
-            // Two-column book spread layout (with real or cosmetic empty margins)
-            twoColumnLayout(page: page, geometry: geometry, hasLeftMargin: hasLeftMargin || forceEmptyMargins, hasRightMargin: hasRightMargin || forceEmptyMargins, hasBothMargins: hasBothMargins || forceEmptyMargins)
+        if viewModel.selectedBook?.hasMarginImages == false {
+            // Books without margin images (plain texts) read as one centered
+            // column. A spread would leave the left column empty — blocks with
+            // no column default to "right" — and squeeze the text into a strip.
+            readableSingleColumnLayout(page: page, geometry: geometry)
+        } else if hasColumnAssignments || hasBothMargins {
+            // Two-column book spread layout
+            twoColumnLayout(page: page, geometry: geometry, hasLeftMargin: hasLeftMargin, hasRightMargin: hasRightMargin, hasBothMargins: hasBothMargins)
         } else if hasAnyMargin {
             // Single-column with margin (legacy layout)
             singleColumnWithMarginLayout(page: page, geometry: geometry, hasLeftMargin: hasLeftMargin)
@@ -151,6 +153,34 @@ struct ReadingView: View {
             // No margin - full width single column
             PageContentView(page: page)
                 .frame(maxWidth: .infinity)
+        }
+    }
+
+    @ViewBuilder
+    private func readableSingleColumnLayout(page: Page, geometry: GeometryProxy) -> some View {
+        // Body text is Palatino 20pt, averaging ~9pt per character, so 680pt
+        // holds a ~70-character line — the measure that stays comfortable to read.
+        let dividerWidth: CGFloat = 1
+        let contentWidth = min(geometry.size.width - dividerWidth * 2, 680)
+
+        HStack(spacing: 0) {
+            Spacer(minLength: 0)
+
+            Rectangle()
+                .frame(width: dividerWidth)
+                .foregroundColor(.black)
+
+            ScrollView(.vertical, showsIndicators: false) {
+                PageContentView(page: page)
+                    .frame(width: contentWidth)
+            }
+            .frame(width: contentWidth)
+
+            Rectangle()
+                .frame(width: dividerWidth)
+                .foregroundColor(.black)
+
+            Spacer(minLength: 0)
         }
     }
 

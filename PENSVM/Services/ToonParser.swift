@@ -15,17 +15,26 @@ import Foundation
 struct ToonParser {
 
     /// Parse a TOON string into an array of AnnotatedWord
+    /// Supports two formats:
+    /// 1. Single header: "words[N]{fields}:\ndata\ndata\n..."
+    /// 2. Per-line headers: "words[0]{fields}: data\nwords[1]{fields}: data\n..."
     static func parse(_ toon: String?, glossNotes: [String: String]? = nil) -> [AnnotatedWord] {
         guard let toon = toon, !toon.isEmpty else { return [] }
 
         let lines = toon.components(separatedBy: "\n")
-        guard lines.count > 1 else { return [] }
+        guard !lines.isEmpty else { return [] }
 
-        // Parse header: words[N]{t,l,g,f}:
+        // Detect format: per-line headers if first line has data after }: (not just header)
         let header = lines[0]
+        if let dataAfterHeader = extractInlineData(header) {
+            // Per-line header format: each line has its own words[N]{fields}: data
+            return parsePerLineFormat(lines, glossNotes: glossNotes, firstLineData: dataAfterHeader)
+        }
+
+        // Original single-header format
+        guard lines.count > 1 else { return [] }
         guard let fields = parseHeader(header) else { return [] }
 
-        // Parse data rows
         var words: [AnnotatedWord] = []
         var wordIndex = 0
         for i in 1..<lines.count {
@@ -34,6 +43,57 @@ struct ToonParser {
 
             let explanation = glossNotes?[String(wordIndex)]
             if let word = parseRow(line, fields: fields, explanation: explanation) {
+                words.append(word)
+            }
+            wordIndex += 1
+        }
+
+        return words
+    }
+
+    /// Check if a header line also contains inline data (per-line format)
+    /// Returns the data portion after "}: " if present, nil if header-only
+    private static func extractInlineData(_ line: String) -> String? {
+        guard let closeBrace = line.firstIndex(of: "}") else { return nil }
+        let afterBrace = line[line.index(after: closeBrace)...]
+        // Single-header format ends with just ":" (possibly whitespace)
+        // Per-line format has ": data" after the closing brace
+        if afterBrace.hasPrefix(": ") {
+            return String(afterBrace.dropFirst(2))
+        }
+        // Also handle ":data" without space
+        if afterBrace.hasPrefix(":") {
+            let rest = String(afterBrace.dropFirst(1)).trimmingCharacters(in: .whitespaces)
+            if !rest.isEmpty {
+                return rest
+            }
+        }
+        return nil
+    }
+
+    /// Parse per-line header format where each line has words[N]{fields}: data
+    private static func parsePerLineFormat(_ lines: [String], glossNotes: [String: String]?, firstLineData: String) -> [AnnotatedWord] {
+        var words: [AnnotatedWord] = []
+        var wordIndex = 0
+
+        for (i, line) in lines.enumerated() {
+            if line.isEmpty { continue }
+
+            let fields: [String]?
+            let data: String
+
+            if i == 0 {
+                fields = parseHeader(line)
+                data = firstLineData
+            } else {
+                fields = parseHeader(line)
+                data = extractInlineData(line) ?? line
+            }
+
+            guard let f = fields else { continue }
+
+            let explanation = glossNotes?[String(wordIndex)]
+            if let word = parseRow(data, fields: f, explanation: explanation) {
                 words.append(word)
             }
             wordIndex += 1
@@ -122,7 +182,13 @@ struct ToonParser {
 
     /// Parse a TOON CSV line — simple comma splitting (no quote escaping needed)
     private static func parseCSVLine(_ line: String) -> [String] {
-        return line.components(separatedBy: ",")
+        // Fields are comma-separated with no quoting, so a comma that is itself
+        // a token (or part of one) has to arrive escaped. Without this a comma
+        // row parses as all-empty and parseRow drops it, silently deleting the
+        // comma from the rendered text.
+        return line.components(separatedBy: ",").map {
+            $0.replacingOccurrences(of: "&comma;", with: ",")
+        }
     }
 
     // MARK: - Expansion (for display)
